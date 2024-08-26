@@ -62,14 +62,15 @@ public:
     void UpdateExePath();
     bool AddBlockToQueue();
     void RunNextBlock();
+    void UpdateQueueList(int selectedIdx);
     void UpdateQueueList();
 
     bool addBlockOnRun = true;
+    bool removeBlockOnCancel = false;
 
 protected:
     RunThread *runThread = nullptr;
     friend class RunThread;
-    bool GetNormalFromLogLine(std::string line, float* normal, float* position);
 
 private:
     void SetupArgs(SaveData* blockParams, std::vector<std::string>& args);

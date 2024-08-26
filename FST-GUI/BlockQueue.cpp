@@ -28,12 +28,20 @@ bool BlockQueue::addBlockToQueue() {
     return addBlockToQueue(newBlock);
 }
 
+std::list<SaveData>::iterator BlockQueue::queueBegin() {
+    return this->queue.begin();
+}
+
 SaveData BlockQueue::getNextBlockInQueue() {
     return *this->queue.begin();
 }
 
 bool BlockQueue::queueEmpty() {
     return this->queue.empty();
+}
+
+int BlockQueue::queueLength() {
+    return this->queue.size();
 }
 
 SaveData BlockQueue::removeBlockFromQueue(int index) {
@@ -66,7 +74,7 @@ void BlockQueue::getQueueStrings(wxArrayString& queueStrings, bool running) {
     int idx = running ? 0 : 1;
 
     for (SaveData block : this->queue) {
-        std::string s = (idx == 0 ? "Running" : std::to_string(idx)) + ") X = [" + float2string(block.xMin, string_float_precision) + " " + float2string(block.xMax, string_float_precision) + "], Y = [" + float2string(block.yMin, string_float_precision) + " " + float2string(block.yMax, string_float_precision) + "], Z = [" + float2string(block.zMin, string_float_precision) + " " + float2string(block.zMax, string_float_precision) + "], Platform = (" + (block.platformOption == 0 ? "-1945" : "-2866") + ", -3225, -715), Size = " + std::to_string(block.xSamples) + "x" + std::to_string(block.ySamples) + "x" + std::to_string(block.zSamples);
+        std::string s = (idx == 0 ? "Running" : std::to_string(idx)) + ") X = [" + float2string(block.xMin, string_float_precision) + " " + float2string(block.xMax, string_float_precision) + "], Y = [" + float2string(block.yMin, string_float_precision) + " " + float2string(block.yMax, string_float_precision) + "], " + (block.zModeOption == 1 ? "Z" : "XZ") + " = [" + float2string(block.zMin, string_float_precision) + " " + float2string(block.zMax, string_float_precision) + "], Platform = (" + (block.platformOption == 0 ? "-1945" : "-2866") + ", -3225, -715), Size = " + std::to_string(block.xSamples) + "x" + std::to_string(block.ySamples) + "x" + std::to_string(block.zSamples);
         queueStrings.push_back(s);
         idx++;
     }

@@ -18,6 +18,59 @@ FST_GUI::~FST_GUI()
     saveSave();
 }
 
+void FST_GUI::loadToSaveStruct(std::ifstream& fs, SaveData* save) {
+    fs.read((char*)(&save->platformOption), sizeof save->platformOption);
+    fs.read((char*)(&save->zModeOption), sizeof save->zModeOption);
+    fs.read((char*)(&save->xMin), sizeof save->xMin);
+    fs.read((char*)(&save->xMax), sizeof save->xMax);
+    fs.read((char*)(&save->yMin), sizeof save->yMin);
+    fs.read((char*)(&save->yMax), sizeof save->yMax);
+    fs.read((char*)(&save->zMin), sizeof save->zMin);
+    fs.read((char*)(&save->zMax), sizeof save->zMax);
+    fs.read((char*)(&save->xSamples), sizeof save->xSamples);
+    fs.read((char*)(&save->ySamples), sizeof save->ySamples);
+    fs.read((char*)(&save->zSamples), sizeof save->zSamples);
+    int outStringSize;
+    fs.read((char*)(&outStringSize), sizeof outStringSize);
+    std::string outputDirectoryStr = "";
+    outputDirectoryStr.resize(outStringSize);
+    fs.read((char*)(outputDirectoryStr.c_str()), outStringSize);
+    save->outputDirectory = std::filesystem::path(outputDirectoryStr);
+    fs.read((char*)(&save->gpuDeviceID), sizeof save->gpuDeviceID);
+    fs.read((char*)(&save->maxThreads), sizeof save->maxThreads);
+    fs.read((char*)(&save->MAX_UPWARP_SOLUTIONS), sizeof save->MAX_UPWARP_SOLUTIONS);
+    fs.read((char*)(&save->MAX_PLAT_SOLUTIONS), sizeof save->MAX_PLAT_SOLUTIONS);
+    fs.read((char*)(&save->MAX_SK_PHASE_ONE), sizeof save->MAX_UPWARP_SOLUTIONS);
+    fs.read((char*)(&save->MAX_SK_PHASE_TWO_A), sizeof save->MAX_SK_PHASE_TWO_A);
+    fs.read((char*)(&save->MAX_SK_PHASE_TWO_B), sizeof save->MAX_SK_PHASE_TWO_B);
+    fs.read((char*)(&save->MAX_SK_PHASE_TWO_C), sizeof save->MAX_SK_PHASE_TWO_C);
+    fs.read((char*)(&save->MAX_SK_PHASE_TWO_D), sizeof save->MAX_SK_PHASE_TWO_D);
+    fs.read((char*)(&save->MAX_SK_PHASE_THREE), sizeof save->MAX_SK_PHASE_THREE);
+    fs.read((char*)(&save->MAX_SK_PHASE_FOUR), sizeof save->MAX_SK_PHASE_FOUR);
+    fs.read((char*)(&save->MAX_SK_PHASE_FIVE), sizeof save->MAX_SK_PHASE_FIVE);
+    fs.read((char*)(&save->MAX_SK_PHASE_SIX), sizeof save->MAX_SK_PHASE_SIX);
+    fs.read((char*)(&save->MAX_SK_UPWARP_SOLUTIONS), sizeof save->MAX_SK_UPWARP_SOLUTIONS);
+    fs.read((char*)(&save->MAX_SPEED_SOLUTIONS), sizeof save->MAX_SPEED_SOLUTIONS);
+    fs.read((char*)(&save->MAX_10K_SOLUTIONS), sizeof save->MAX_10K_SOLUTIONS);
+    fs.read((char*)(&save->MAX_SLIDE_SOLUTIONS), sizeof save->MAX_SLIDE_SOLUTIONS);
+    fs.read((char*)(&save->MAX_BD_SOLUTIONS), sizeof save->MAX_BD_SOLUTIONS);
+    fs.read((char*)(&save->MAX_DOUBLE_10K_SOLUTIONS), sizeof save->MAX_DOUBLE_10K_SOLUTIONS);
+    fs.read((char*)(&save->MAX_BULLY_PUSH_SOLUTIONS), sizeof save->MAX_BULLY_PUSH_SOLUTIONS);
+    fs.read((char*)(&save->MAX_SQUISH_SPOTS), sizeof save->MAX_SQUISH_SPOTS);
+    fs.read((char*)(&save->MAX_STRAIN_SETUPS), sizeof save->MAX_STRAIN_SETUPS);
+    fs.read((char*)(&outStringSize), sizeof outStringSize);
+    std::string cudaExecutablePathStr = "";
+    cudaExecutablePathStr.resize(outStringSize);
+    fs.read((char*)(cudaExecutablePathStr.c_str()), outStringSize);
+    save->cudaExecutablePath = std::filesystem::path(cudaExecutablePathStr);
+    fs.read((char*)(&outStringSize), sizeof outStringSize);
+    std::string syclExecutablePathStr = "";
+    syclExecutablePathStr.resize(outStringSize);
+    fs.read((char*)(syclExecutablePathStr.c_str()), outStringSize);
+    save->syclExecutablePath = std::filesystem::path(syclExecutablePathStr);
+    fs.read((char*)(&save->gpuModeSelected), sizeof save->gpuModeSelected);
+}
+
 void FST_GUI::loadSave() {
     if (!std::filesystem::exists(this->saveFile)) {
         saveSave();
@@ -30,113 +83,96 @@ void FST_GUI::loadSave() {
             fs.read((char*)(&saveVersion), sizeof saveVersion);
 
             if (saveVersion == this->saveStruct.version) {
-                fs.read((char*)(&this->saveStruct.platformOption), sizeof this->saveStruct.platformOption);
-                fs.read((char*)(&this->saveStruct.zModeOption), sizeof this->saveStruct.zModeOption);
-                fs.read((char*)(&this->saveStruct.xMin), sizeof this->saveStruct.xMin);
-                fs.read((char*)(&this->saveStruct.xMax), sizeof this->saveStruct.xMax);
-                fs.read((char*)(&this->saveStruct.yMin), sizeof this->saveStruct.yMin);
-                fs.read((char*)(&this->saveStruct.yMax), sizeof this->saveStruct.yMax);
-                fs.read((char*)(&this->saveStruct.zMin), sizeof this->saveStruct.zMin);
-                fs.read((char*)(&this->saveStruct.zMax), sizeof this->saveStruct.zMax);
-                fs.read((char*)(&this->saveStruct.xSamples), sizeof this->saveStruct.xSamples);
-                fs.read((char*)(&this->saveStruct.ySamples), sizeof this->saveStruct.ySamples);
-                fs.read((char*)(&this->saveStruct.zSamples), sizeof this->saveStruct.zSamples);
-                int outStringSize;
-                fs.read((char*)(&outStringSize), sizeof outStringSize);
-                std::string outputDirectoryStr = "";
-                outputDirectoryStr.resize(outStringSize);
-                fs.read((char*)(outputDirectoryStr.c_str()), outStringSize);
-                this->saveStruct.outputDirectory = std::filesystem::path(outputDirectoryStr);
-                fs.read((char*)(&this->saveStruct.gpuDeviceID), sizeof this->saveStruct.gpuDeviceID);
-                fs.read((char*)(&this->saveStruct.maxThreads), sizeof this->saveStruct.maxThreads);
-                fs.read((char*)(&this->saveStruct.MAX_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_PLAT_SOLUTIONS), sizeof this->saveStruct.MAX_PLAT_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_ONE), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_A), sizeof this->saveStruct.MAX_SK_PHASE_TWO_A);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_B), sizeof this->saveStruct.MAX_SK_PHASE_TWO_B);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_C), sizeof this->saveStruct.MAX_SK_PHASE_TWO_C);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_D), sizeof this->saveStruct.MAX_SK_PHASE_TWO_D);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_THREE), sizeof this->saveStruct.MAX_SK_PHASE_THREE);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_FOUR), sizeof this->saveStruct.MAX_SK_PHASE_FOUR);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_FIVE), sizeof this->saveStruct.MAX_SK_PHASE_FIVE);
-                fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_SIX), sizeof this->saveStruct.MAX_SK_PHASE_SIX);
-                fs.read((char*)(&this->saveStruct.MAX_SK_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_SK_UPWARP_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_SPEED_SOLUTIONS), sizeof this->saveStruct.MAX_SPEED_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_10K_SOLUTIONS), sizeof this->saveStruct.MAX_10K_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_SLIDE_SOLUTIONS), sizeof this->saveStruct.MAX_SLIDE_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_BD_SOLUTIONS), sizeof this->saveStruct.MAX_BD_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS), sizeof this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS), sizeof this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS);
-                fs.read((char*)(&this->saveStruct.MAX_SQUISH_SPOTS), sizeof this->saveStruct.MAX_SQUISH_SPOTS);
-                fs.read((char*)(&this->saveStruct.MAX_STRAIN_SETUPS), sizeof this->saveStruct.MAX_STRAIN_SETUPS);
-                fs.read((char*)(&outStringSize), sizeof outStringSize);
-                std::string cudaExecutablePathStr = "";
-                cudaExecutablePathStr.resize(outStringSize);
-                fs.read((char*)(cudaExecutablePathStr.c_str()), outStringSize);
-                this->saveStruct.cudaExecutablePath = std::filesystem::path(cudaExecutablePathStr);
-                fs.read((char*)(&outStringSize), sizeof outStringSize);
-                std::string syclExecutablePathStr = "";
-                syclExecutablePathStr.resize(outStringSize);
-                fs.read((char*)(syclExecutablePathStr.c_str()), outStringSize);
-                this->saveStruct.syclExecutablePath = std::filesystem::path(syclExecutablePathStr);
-                fs.read((char*)(&this->saveStruct.gpuModeSelected), sizeof this->saveStruct.gpuModeSelected);
+                loadToSaveStruct(fs, &this->saveStruct);
+
+                int queueLength = blockQueue.queueLength();
+                fs.read((char*)(&queueLength), sizeof queueLength);
+
+                for (int i = 0; i < queueLength; i++) {
+                    fs.read((char*)(&saveVersion), sizeof saveVersion);
+
+                    if (saveVersion == this->saveStruct.version) {
+                        SaveData queueBlock;
+                        loadToSaveStruct(fs, &queueBlock);
+                        this->blockQueue.addBlockToQueue(queueBlock);
+                    }
+                    else {
+                        break;
+                    }
+                }
             }
         }
+
         fs.close();
     }
+}
+
+void FST_GUI::saveFromSaveStruct(std::ofstream& fs, SaveData* save) {
+    fs.write((char*)(&save->version), sizeof save->version);
+    fs.write((char*)(&save->platformOption), sizeof save->platformOption);
+    fs.write((char*)(&save->zModeOption), sizeof save->zModeOption);
+    fs.write((char*)(&save->xMin), sizeof save->xMin);
+    fs.write((char*)(&save->xMax), sizeof save->xMax);
+    fs.write((char*)(&save->yMin), sizeof save->yMin);
+    fs.write((char*)(&save->yMax), sizeof save->yMax);
+    fs.write((char*)(&save->zMin), sizeof save->zMin);
+    fs.write((char*)(&save->zMax), sizeof save->zMax);
+    fs.write((char*)(&save->xSamples), sizeof save->xSamples);
+    fs.write((char*)(&save->ySamples), sizeof save->ySamples);
+    fs.write((char*)(&save->zSamples), sizeof save->zSamples);
+    std::string outputDirectoryStr = save->outputDirectory.string();
+    int outStringSize = outputDirectoryStr.size();
+    fs.write((char*)(&outStringSize), sizeof outStringSize);
+    fs.write((char*)(outputDirectoryStr.c_str()), outStringSize);
+    fs.write((char*)(&save->gpuDeviceID), sizeof save->gpuDeviceID);
+    fs.write((char*)(&save->maxThreads), sizeof save->maxThreads);
+    fs.write((char*)(&save->MAX_UPWARP_SOLUTIONS), sizeof save->MAX_UPWARP_SOLUTIONS);
+    fs.write((char*)(&save->MAX_PLAT_SOLUTIONS), sizeof save->MAX_PLAT_SOLUTIONS);
+    fs.write((char*)(&save->MAX_SK_PHASE_ONE), sizeof save->MAX_UPWARP_SOLUTIONS);
+    fs.write((char*)(&save->MAX_SK_PHASE_TWO_A), sizeof save->MAX_SK_PHASE_TWO_A);
+    fs.write((char*)(&save->MAX_SK_PHASE_TWO_B), sizeof save->MAX_SK_PHASE_TWO_B);
+    fs.write((char*)(&save->MAX_SK_PHASE_TWO_C), sizeof save->MAX_SK_PHASE_TWO_C);
+    fs.write((char*)(&save->MAX_SK_PHASE_TWO_D), sizeof save->MAX_SK_PHASE_TWO_D);
+    fs.write((char*)(&save->MAX_SK_PHASE_THREE), sizeof save->MAX_SK_PHASE_THREE);
+    fs.write((char*)(&save->MAX_SK_PHASE_FOUR), sizeof save->MAX_SK_PHASE_FOUR);
+    fs.write((char*)(&save->MAX_SK_PHASE_FIVE), sizeof save->MAX_SK_PHASE_FIVE);
+    fs.write((char*)(&save->MAX_SK_PHASE_SIX), sizeof save->MAX_SK_PHASE_SIX);
+    fs.write((char*)(&save->MAX_SK_UPWARP_SOLUTIONS), sizeof save->MAX_SK_UPWARP_SOLUTIONS);
+    fs.write((char*)(&save->MAX_SPEED_SOLUTIONS), sizeof save->MAX_SPEED_SOLUTIONS);
+    fs.write((char*)(&save->MAX_10K_SOLUTIONS), sizeof save->MAX_10K_SOLUTIONS);
+    fs.write((char*)(&save->MAX_SLIDE_SOLUTIONS), sizeof save->MAX_SLIDE_SOLUTIONS);
+    fs.write((char*)(&save->MAX_BD_SOLUTIONS), sizeof save->MAX_BD_SOLUTIONS);
+    fs.write((char*)(&save->MAX_DOUBLE_10K_SOLUTIONS), sizeof save->MAX_DOUBLE_10K_SOLUTIONS);
+    fs.write((char*)(&save->MAX_BULLY_PUSH_SOLUTIONS), sizeof save->MAX_BULLY_PUSH_SOLUTIONS);
+    fs.write((char*)(&save->MAX_SQUISH_SPOTS), sizeof save->MAX_SQUISH_SPOTS);
+    fs.write((char*)(&save->MAX_STRAIN_SETUPS), sizeof save->MAX_STRAIN_SETUPS);
+    std::string cudaExecutablePathStr = save->cudaExecutablePath.string();
+    outStringSize = cudaExecutablePathStr.size();
+    fs.write((char*)(&outStringSize), sizeof outStringSize);
+    fs.write((char*)(cudaExecutablePathStr.c_str()), outStringSize);
+    std::string syclExecutablePathStr = save->syclExecutablePath.string();
+    outStringSize = syclExecutablePathStr.size();
+    fs.write((char*)(&outStringSize), sizeof outStringSize);
+    fs.write((char*)(syclExecutablePathStr.c_str()), outStringSize);
+    fs.write((char*)(&save->gpuModeSelected), sizeof save->gpuModeSelected);
 }
 
 void FST_GUI::saveSave() {
     std::ofstream fs(this->saveFile, std::ios::out | std::ios::binary);
 
     if (fs) {
-        fs.write((char*)(&this->saveStruct.version), sizeof this->saveStruct.version);
-        fs.write((char*)(&this->saveStruct.platformOption), sizeof this->saveStruct.platformOption);
-        fs.write((char*)(&this->saveStruct.zModeOption), sizeof this->saveStruct.zModeOption);
-        fs.write((char*)(&this->saveStruct.xMin), sizeof this->saveStruct.xMin);
-        fs.write((char*)(&this->saveStruct.xMax), sizeof this->saveStruct.xMax);
-        fs.write((char*)(&this->saveStruct.yMin), sizeof this->saveStruct.yMin);
-        fs.write((char*)(&this->saveStruct.yMax), sizeof this->saveStruct.yMax);
-        fs.write((char*)(&this->saveStruct.zMin), sizeof this->saveStruct.zMin);
-        fs.write((char*)(&this->saveStruct.zMax), sizeof this->saveStruct.zMax);
-        fs.write((char*)(&this->saveStruct.xSamples), sizeof this->saveStruct.xSamples);
-        fs.write((char*)(&this->saveStruct.ySamples), sizeof this->saveStruct.ySamples);
-        fs.write((char*)(&this->saveStruct.zSamples), sizeof this->saveStruct.zSamples);
-        std::string outputDirectoryStr = this->saveStruct.outputDirectory.string();
-        int outStringSize = outputDirectoryStr.size();
-        fs.write((char*)(&outStringSize), sizeof outStringSize);
-        fs.write((char*)(outputDirectoryStr.c_str()), outStringSize);
-        fs.write((char*)(&this->saveStruct.gpuDeviceID), sizeof this->saveStruct.gpuDeviceID);
-        fs.write((char*)(&this->saveStruct.maxThreads), sizeof this->saveStruct.maxThreads);
-        fs.write((char*)(&this->saveStruct.MAX_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_PLAT_SOLUTIONS), sizeof this->saveStruct.MAX_PLAT_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_ONE), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_A), sizeof this->saveStruct.MAX_SK_PHASE_TWO_A);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_B), sizeof this->saveStruct.MAX_SK_PHASE_TWO_B);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_C), sizeof this->saveStruct.MAX_SK_PHASE_TWO_C);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_D), sizeof this->saveStruct.MAX_SK_PHASE_TWO_D);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_THREE), sizeof this->saveStruct.MAX_SK_PHASE_THREE);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_FOUR), sizeof this->saveStruct.MAX_SK_PHASE_FOUR);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_FIVE), sizeof this->saveStruct.MAX_SK_PHASE_FIVE);
-        fs.write((char*)(&this->saveStruct.MAX_SK_PHASE_SIX), sizeof this->saveStruct.MAX_SK_PHASE_SIX);
-        fs.write((char*)(&this->saveStruct.MAX_SK_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_SK_UPWARP_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_SPEED_SOLUTIONS), sizeof this->saveStruct.MAX_SPEED_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_10K_SOLUTIONS), sizeof this->saveStruct.MAX_10K_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_SLIDE_SOLUTIONS), sizeof this->saveStruct.MAX_SLIDE_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_BD_SOLUTIONS), sizeof this->saveStruct.MAX_BD_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS), sizeof this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS), sizeof this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS);
-        fs.write((char*)(&this->saveStruct.MAX_SQUISH_SPOTS), sizeof this->saveStruct.MAX_SQUISH_SPOTS);
-        fs.write((char*)(&this->saveStruct.MAX_STRAIN_SETUPS), sizeof this->saveStruct.MAX_STRAIN_SETUPS);
-        std::string cudaExecutablePathStr = this->saveStruct.cudaExecutablePath.string();
-        outStringSize = cudaExecutablePathStr.size();
-        fs.write((char*)(&outStringSize), sizeof outStringSize);
-        fs.write((char*)(cudaExecutablePathStr.c_str()), outStringSize);
-        std::string syclExecutablePathStr = this->saveStruct.syclExecutablePath.string();
-        outStringSize = syclExecutablePathStr.size();
-        fs.write((char*)(&outStringSize), sizeof outStringSize);
-        fs.write((char*)(syclExecutablePathStr.c_str()), outStringSize);
-        fs.write((char*)(&this->saveStruct.gpuModeSelected), sizeof this->saveStruct.gpuModeSelected);
+        saveFromSaveStruct(fs, &this->saveStruct);
+
+        int queueLength = blockQueue.queueLength();
+        fs.write((char*)(&queueLength), sizeof queueLength);
+
+        std::list<SaveData>::iterator iter = blockQueue.queueBegin();
+
+        for (int i = 0; i < queueLength; i++) {
+            saveFromSaveStruct(fs, &(*iter));
+
+            iter++;
+        }
     }
 
     fs.close();

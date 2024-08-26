@@ -144,6 +144,7 @@
     <ClCompile Include="BlockQueue.cpp" />
     <ClCompile Include="FST-GUI.cpp" />
     <ClCompile Include="GPUFrame.cpp" />
+    <ClCompile Include="Logging.cpp" />
     <ClCompile Include="MainFrame.cpp" />
     <ClCompile Include="RunThread.cpp" />
     <ClCompile Include="utils.cpp" />
@@ -151,6 +152,7 @@
   <ItemGroup>
     <ClInclude Include="FST-GUI.hpp" />
     <ClInclude Include="GPUFrame.hpp" />
+    <ClInclude Include="Logging.hpp" />
     <ClInclude Include="MainFrame.hpp" />
     <ClInclude Include="RunThread.hpp" />
     <ClInclude Include="subprocess.h" />

@@ -350,6 +350,9 @@ void GPUFrame::OnTextChange(wxCommandEvent& event) {
 GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     : wxDialog(parent, wxID_ANY, title, wxDefaultPosition, wxSize(gpufWidth, gpufHeight), wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
+    double scaleFactor = this->GetDPIScaleFactor();
+    this->SetSize(wxSize(scaleFactor * gpufWidth, scaleFactor * gpufHeight));
+
     fst_gui = f;
 
     wxPanel* panel = new wxPanel(this, -1);
@@ -362,7 +365,7 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     modeLabel = new wxStaticText(panel, wxID_ANY, wxT("Compute Library:"));
 
     modeLabelVBox->Add(modeLabel, 0, wxTOP, 0);
-    modeHBox->Add(modeLabelVBox, 0, wxRIGHT, 8);
+    modeHBox->Add(modeLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 8));
 
     wxBoxSizer* modeRadioHBox = new wxBoxSizer(wxHORIZONTAL);
     cudaRadio = new wxRadioButton(panel, ID_CUDA_RADIO, "CUDA");
@@ -377,11 +380,11 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
             break;
     }
 
-    modeRadioHBox->Add(cudaRadio, 0, wxRIGHT, 10);
-    modeRadioHBox->Add(syclRadio, 0, wxRIGHT, 10);
-    modeHBox->Add(modeRadioHBox, 0, wxLEFT, 12);
+    modeRadioHBox->Add(cudaRadio, 0, wxRIGHT, (int)std::round(scaleFactor * 10));
+    modeRadioHBox->Add(syclRadio, 0, wxRIGHT, (int)std::round(scaleFactor * 10));
+    modeHBox->Add(modeRadioHBox, 0, wxLEFT, (int)std::round(scaleFactor * 12));
 
-    mainVBox->Add(modeHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(modeHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
     Connect(ID_CUDA_RADIO, wxEVT_RADIOBUTTON, wxCommandEventHandler(GPUFrame::OnModeChange));
     Connect(ID_SYCL_RADIO, wxEVT_RADIOBUTTON, wxCommandEventHandler(GPUFrame::OnModeChange));
@@ -390,8 +393,8 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     devLabel = new wxStaticText(panel, wxID_ANY, wxT("GPU Device:"));
 
     wxBoxSizer* devLabelVBox = new wxBoxSizer(wxVERTICAL);
-    devLabelVBox->Add(devLabel, 0, wxTOP, 4);
-    devHBox->Add(devLabelVBox, 0, wxRIGHT, 28);
+    devLabelVBox->Add(devLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    devHBox->Add(devLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 28));
 
     wxBoxSizer* devComboVBox = new wxBoxSizer(wxVERTICAL);
 
@@ -410,13 +413,13 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
 
     comboDev = new wxComboBox(panel, ID_GPU_DEV, fst_gui->saveStruct.gpuDeviceID < 0 ? wxString("") : comboDevOptions[fst_gui->saveStruct.gpuDeviceID], wxDefaultPosition, wxDefaultSize, comboDevOptions, wxCB_READONLY);
     devComboVBox->Add(comboDev, 0, wxALL | wxALIGN_CENTER, 0);
-    devHBox->Add(devComboVBox, 1);
+    devHBox->Add(devComboVBox, (int)std::round(scaleFactor * 1));
 
     wxSize comboDevSize = comboDev->GetSize();
-    comboDevSize.SetWidth(480);
+    comboDevSize.SetWidth((int)std::round(scaleFactor * 480));
     comboDev->SetMinSize(comboDevSize);
 
-    mainVBox->Add(devHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(devHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
     Connect(ID_GPU_DEV, wxEVT_COMBOBOX, wxCommandEventHandler(GPUFrame::OnComboChange));
 
@@ -424,8 +427,8 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     threadLabel = new wxStaticText(panel, wxID_ANY, fst_gui->saveStruct.gpuModeSelected == MODE_SYCL ? wxT("Max Work Group Size:") : wxT("Max Threads Per Block:"));
 
     wxBoxSizer* threadLabelVBox = new wxBoxSizer(wxVERTICAL);
-    threadLabelVBox->Add(threadLabel, 0, wxTOP, 4);
-    threadHBox->Add(threadLabelVBox, 0, wxRIGHT, 24);
+    threadLabelVBox->Add(threadLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    threadHBox->Add(threadLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 24));
 
     wxBoxSizer* threadTextVBox = new wxBoxSizer(wxVERTICAL);
 
@@ -449,13 +452,13 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
 
     threadBox = new wxTextCtrl(panel, ID_GPU_THREAD, std::to_string(fst_gui->saveStruct.maxThreads), wxDefaultPosition, wxDefaultSize, 0, threadVal);
     threadTextVBox->Add(threadBox, 0, wxALL, 0);
-    threadHBox->Add(threadTextVBox, 1);
+    threadHBox->Add(threadTextVBox, (int)std::round(scaleFactor * 1));
 
-    mainVBox->Add(threadHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(threadHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
     Connect(ID_GPU_THREAD, wxEVT_TEXT, wxCommandEventHandler(GPUFrame::OnTextChange));
 
-    mainVBox->Add(-1, 10);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxIntegerValidator<int> intVal(NULL, wxNUM_VAL_DEFAULT);
     intVal.SetMin(0);
@@ -463,12 +466,12 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     wxBoxSizer* solutionsLabelHBox = new wxBoxSizer(wxHORIZONTAL);
     solutionsLabel = new wxStaticText(panel, wxID_ANY, wxT("GPU Solution Storage Limits:"));
 
-    solutionsLabelHBox->Add(solutionsLabel, 0, wxRIGHT, 26);
+    solutionsLabelHBox->Add(solutionsLabel, 0, wxRIGHT, (int)std::round(scaleFactor * 26));
 
-    mainVBox->Add(solutionsLabelHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(solutionsLabelHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* solutionsHBox = new wxBoxSizer(wxHORIZONTAL);
-    wxGridSizer* solutionsGrid = new wxGridSizer(10, 4, 4, 8);
+    wxGridSizer* solutionsGrid = new wxGridSizer(10, 4, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
 
     solSK1Label = new wxStaticText(panel, wxID_ANY, wxT("Slide Kick Solutions 1:"));
     solutionsGrid->Add(solSK1Label, 0, wxALL | wxALIGN_CENTER_VERTICAL, 0);
@@ -591,23 +594,23 @@ GPUFrame::GPUFrame(wxWindow* parent, const wxString& title, FST_GUI* f)
     Connect(ID_SQUISH_SPOTS, wxEVT_TEXT, wxCommandEventHandler(GPUFrame::OnTextChange));
     Connect(ID_STRAIN_SETUPS, wxEVT_TEXT, wxCommandEventHandler(GPUFrame::OnTextChange));
 
-    solutionsHBox->Add(solutionsGrid, 1, wxLEFT, 20);
+    solutionsHBox->Add(solutionsGrid, 1, wxLEFT, (int)std::round(scaleFactor * 20));
 
-    mainVBox->Add(solutionsHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(solutionsHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 30);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 30));
 
     wxBoxSizer* buttonHBox = new wxBoxSizer(wxHORIZONTAL);
     resetButton = new wxButton(panel, ID_RESET_BUTTON, wxT("Reset to Defaults"));
     buttonHBox->Add(resetButton, 0);
     doneButton = new wxButton(panel, ID_DONE_BUTTON, wxT("Done"));
-    buttonHBox->Add(doneButton, 0, wxLEFT | wxBOTTOM, 5);
-    mainVBox->Add(buttonHBox, 0, wxALIGN_RIGHT | wxRIGHT, 10);
+    buttonHBox->Add(doneButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 5));
+    mainVBox->Add(buttonHBox, 0, wxALIGN_RIGHT | wxRIGHT, (int)std::round(scaleFactor * 10));
 
     Connect(ID_RESET_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(GPUFrame::OnClickReset));
     Connect(ID_DONE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(GPUFrame::OnClickDone));
 
-    mainVBox->Add(-1, 35);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 35));
 
     panel->SetSizer(mainVBox);
 

@@ -9,6 +9,8 @@ add_executable(FST-GUI
   "FST-GUI.hpp"
   "GPUFrame.cpp"
   "GPUFrame.hpp"
+  "Logging.hpp"
+  "Logging.cpp"
   "MainFrame.cpp"
   "MainFrame.hpp"
   "RunThread.cpp"

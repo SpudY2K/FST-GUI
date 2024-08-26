@@ -1,5 +1,6 @@
 #include "MainFrame.hpp"
 #include "GPUFrame.hpp"
+#include "Logging.hpp"
 #include "utils.hpp"
 #include <wx/valnum.h>
 #include <wx/statline.h>
@@ -28,6 +29,12 @@ void MainFrame::OnThreadCompletion(wxThreadEvent& event)
     runThread = nullptr;
 
     if (runCancelled) {
+        if (fst_gui->blockQueue.queueLength() == 1 && removeBlockOnCancel) {
+            fst_gui->blockQueue.removeBlockFromQueue(0);
+            UpdateQueueList(this->queueList->GetSelection() - 1);
+            fst_gui->saveSave();
+        }
+
         statusBar->SetStatusText("");
         runButton->SetLabelText("Run Brute Forcer");
 
@@ -35,6 +42,8 @@ void MainFrame::OnThreadCompletion(wxThreadEvent& event)
     }
     else {
         fst_gui->blockQueue.removeBlockFromQueue(0);
+        UpdateQueueList(this->queueList->GetSelection() - 1);
+        fst_gui->saveSave();
 
         if (fst_gui->blockQueue.queueEmpty()) {
             statusBar->SetStatusText("");
@@ -44,8 +53,6 @@ void MainFrame::OnThreadCompletion(wxThreadEvent& event)
             this->RunNextBlock();
         }
     }
-
-    UpdateQueueList();
 }
 
 void MainFrame::OnThreadUpdate(wxThreadEvent& event)
@@ -190,20 +197,36 @@ void MainFrame::RunNextBlock() {
  }
 
 void MainFrame::UpdateQueueList() {
+    int selectedIdx = queueList->GetSelection();
+
+    UpdateQueueList(selectedIdx);
+}
+
+void MainFrame::UpdateQueueList(int selectedIdx) {
     wxArrayString queueEntries;
     fst_gui->blockQueue.getQueueStrings(queueEntries, runThread != nullptr);
     queueList->Clear();
-    queueList->InsertItems(queueEntries, 0);
+
+    if (!queueEntries.IsEmpty()) {
+        queueList->InsertItems(queueEntries, 0);
+    }
+
+    selectedIdx = std::min(selectedIdx, (int)queueList->GetCount() - 1);
+    selectedIdx = selectedIdx < 0 ? wxNOT_FOUND : selectedIdx;
+
+    queueList->SetSelection(selectedIdx);
 }
 
 void MainFrame::OnClickQueue(wxCommandEvent& event) {
+    double scaleFactor = this->GetDPIScaleFactor();
     wxSize size = this->GetSize();
+
     if (queueVisible) {
-        size.SetWidth(mfWidthNoQueue);
+        size.SetWidth(scaleFactor * mfWidthNoQueue);
         showQueueButton->SetLabelText("Show Queue");
     }
     else {
-        size.SetWidth(mfWidthQueue);
+        size.SetWidth(scaleFactor * mfWidthQueue);
         showQueueButton->SetLabelText("Hide Queue");
     }
 
@@ -212,14 +235,22 @@ void MainFrame::OnClickQueue(wxCommandEvent& event) {
 }
 
 void MainFrame::OnClickAddQueue(wxCommandEvent& event) {
-    AddBlockToQueue();
+    if (AddBlockToQueue()) {
+        addBlockOnRun = false;
+        removeBlockOnCancel = false;
+    }
 }
 
 void MainFrame::OnClickRemoveQueue(wxCommandEvent& event) {
     if (queueList->GetSelection() != -1) {
         if (!runThread || queueList->GetSelection() != 0) {
+            if (queueList->GetSelection() == fst_gui->blockQueue.queueLength() - 1) {
+                removeBlockOnCancel = false;
+            }
+
             fst_gui->blockQueue.removeBlockFromQueue(queueList->GetSelection());
-            UpdateQueueList();
+            UpdateQueueList(queueList->GetSelection() - 1);
+            fst_gui->saveSave();
         }
     }
 }
@@ -227,135 +258,10 @@ void MainFrame::OnClickRemoveQueue(wxCommandEvent& event) {
 void MainFrame::OnClickClearQueue(wxCommandEvent& event) {
     fst_gui->blockQueue.clearQueue(!runThread);
     UpdateQueueList();
+    fst_gui->saveSave();
 }
 
-bool MainFrame::GetNormalFromLogLine(std::string line, float* normal, float* position) {
-    if (!line.starts_with("W ")) {
-        return false;
-    }
 
-    line = line.substr(2);
-
-    if (!line.starts_with("[")) {
-        return false;
-    }
-
-    int spaceIdx = line.find("] ");
-
-    if (spaceIdx == -1) {
-        return false;
-    }
-
-    line = line.substr(spaceIdx + 2);
-
-    if (!line.starts_with("- ")) {
-        return false;
-    }
-
-    line = line.substr(2);
-
-    if (!line.starts_with("(")) {
-        return false;
-    }
-
-    spaceIdx = line.find(") ");
-
-    if (spaceIdx == -1) {
-        return false;
-    }
-
-    std::string normalStr = line.substr(1, spaceIdx - 1);
-
-    int commaIdx = normalStr.find(",");
-
-    if (commaIdx == -1) {
-        return false;
-    }
-
-    try {
-        normal[0] = std::stof(normalStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    normalStr = normalStr.substr(commaIdx + 1);
-    
-    commaIdx = normalStr.find(",");
-
-    if (commaIdx == -1) {
-        return false;
-    }
-
-    try {
-        normal[1] = std::stof(normalStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    normalStr = normalStr.substr(commaIdx + 1);
-
-    try {
-        normal[2] = std::stof(normalStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    line = line.substr(spaceIdx + 2);
-
-    if (!line.starts_with("(")) {
-        return false;
-    }
-
-    spaceIdx = line.find(")");
-
-    if (spaceIdx == -1) {
-        return false;
-    }
-
-    std::string positionStr = line.substr(1, spaceIdx - 1);
-
-    commaIdx = positionStr.find(",");
-
-    if (commaIdx == -1) {
-        return false;
-    }
-
-    try {
-        position[0] = std::stof(positionStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    positionStr = positionStr.substr(commaIdx + 1);
-
-    commaIdx = positionStr.find(",");
-
-    if (commaIdx == -1) {
-        return false;
-    }
-
-    try {
-        position[1] = std::stof(positionStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    positionStr = positionStr.substr(commaIdx + 1);
-
-    try {
-        position[2] = std::stof(positionStr.substr(0, commaIdx));
-    }
-    catch (...) {
-        return false;
-    }
-
-    return true;
-}
 
 void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
     wxFileDialog openFileDialog(this, "Open log file", fst_gui->saveStruct.outputDirectory.string(), "", "Log files (*.log)|*.log", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
@@ -379,42 +285,72 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
         float normal[3];
         float position[3];
 
+        SaveData blockData = fst_gui->saveStruct;
+        unsigned int blockStatus = 0;
+        int samplesSearched = 0;
+        float lastSampleSearched = 0.0f;
+        bool searchComplete = false;
+
         while (std::getline(logFile, line)) {
-            if (GetNormalFromLogLine(line, normal, position)) {
-                if ((position[0] == -1945 || position[0] == -2866) && position[1] == -3225 && position[2] == -715) {
-                    addedBlocks++;
+            char l;
+            std::string time;
 
-                    SaveData newBlock = fst_gui->saveStruct;
+            if (CheckLogLine(line, time, l)) {
+                if (l == LOG_WARNING) {
+                    if (GetNormalFromLogLine(line, normal, position)) {
+                        if ((position[0] == -1945 || position[0] == -2866) && position[1] == -3225 && position[2] == -715) {
+                            SaveData newBlock = fst_gui->saveStruct;
 
-                    newBlock.xMin = normal[0];
-                    newBlock.xMax = normal[0];
-                    newBlock.yMin = normal[1];
-                    newBlock.yMax = normal[1];
-                    newBlock.zMin = normal[2];
-                    newBlock.zMax = normal[2];
-                    newBlock.xSamples = 1;
-                    newBlock.ySamples = 1;
-                    newBlock.zSamples = 1;
+                            newBlock.xMin = normal[0];
+                            newBlock.xMax = normal[0];
+                            newBlock.yMin = normal[1];
+                            newBlock.yMax = normal[1];
+                            newBlock.zMin = normal[2];
+                            newBlock.zMax = normal[2];
+                            newBlock.xSamples = 1;
+                            newBlock.ySamples = 1;
+                            newBlock.zSamples = 1;
 
-                    newBlock.zModeOption = 1;
-                    newBlock.platformOption = (position[0] == -1945 ? 0 : 1);
+                            newBlock.zModeOption = 1;
+                            newBlock.platformOption = (position[0] == -1945 ? 0 : 1);
 
-                    fst_gui->blockQueue.addBlockToQueue(newBlock);
+                            if (fst_gui->blockQueue.addBlockToQueue(newBlock)) {
+                                addedBlocks++;
+                            }
+                        }
+                    }
+                }
+                else if (l == LOG_INFO) {
+                    if (!GetOptionFromLine(line, blockData, blockStatus) && (blockStatus == 0x1FF || blockStatus == 0x177)) {
+                        CheckLineForSearchInfo(line, samplesSearched, lastSampleSearched);
+                        searchComplete = CheckLineForCompletion(line);
+                    }
                 }
             }
         }
 
+        if (blockStatus == 0x1FF || blockStatus == 0x177 && samplesSearched > 0 && !searchComplete) {
+            blockData.zMin = lastSampleSearched;
+            blockData.zSamples = blockData.zSamples - samplesSearched + 1;
+
+            if (fst_gui->blockQueue.addBlockToQueue(blockData)) {
+                addedBlocks++;
+            }
+        }
+
         if (addedBlocks == 0) {
-            wxMessageDialog createFolderDialog = wxMessageDialog(this, "Could not find any normals in log file.", "Error", wxOK | wxCENTRE);
+            wxMessageDialog createFolderDialog = wxMessageDialog(this, "Could not find any new normal blocks in log file.", "Error", wxOK | wxCENTRE);
             createFolderDialog.ShowModal();
         }
         else {
-            UpdateQueueList();
+            UpdateQueueList(fst_gui->blockQueue.queueLength() - 1);
+            fst_gui->saveSave();
+            addBlockOnRun = false;
+            removeBlockOnCancel = false;
 
-            std::string outText = "Imported " + std::to_string(addedBlocks) + " normals from log file.";
+            std::string outText = "Imported " + std::to_string(addedBlocks) + " normal block" + (addedBlocks > 1 ? "s" : "") + " from log file.";
             wxMessageDialog createFolderDialog = wxMessageDialog(this, outText, "Import Successful", wxOK | wxCENTRE);
             createFolderDialog.ShowModal();
-            addBlockOnRun = false;
         }
     }
 }
@@ -448,18 +384,26 @@ bool MainFrame::AddBlockToQueue() {
         }
     }
 
-    fst_gui->blockQueue.addBlockToQueue();
-    UpdateQueueList();
+    bool success = fst_gui->blockQueue.addBlockToQueue();
 
-    return true;
+    if (success) {
+        UpdateQueueList(fst_gui->blockQueue.queueLength() - 1);
+        fst_gui->saveSave();
+    }
+
+    return success;
 }
 
 void MainFrame::OnClickRun(wxCommandEvent& event) {
     if (!runThread) {
         fst_gui->saveSave();
-        if (!addBlockOnRun || this->AddBlockToQueue()) {
-            this->RunNextBlock();
+
+        if (addBlockOnRun) {
+            this->AddBlockToQueue();
+            removeBlockOnCancel = true;
         }
+
+        this->RunNextBlock();
     }
     else {
         runCancelled = true;
@@ -669,10 +613,13 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
 MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(mfWidthNoQueue, mfHeight), wxMINIMIZE_BOX | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
+    double scaleFactor = this->GetDPIScaleFactor();
+    this->SetSize(wxSize(scaleFactor * mfWidthNoQueue, scaleFactor * mfHeight));
+
     fst_gui = f;
 
     wxPoint panelPos = { 0, 0 };
-    wxSize panelSize = { mfWidthNoQueue - 15, mfHeight - 60 };
+    wxSize panelSize = { (int)std::round(scaleFactor * (mfWidthNoQueue - 15)), (int)std::round(scaleFactor * (mfHeight - 60)) };
     wxPanel* panel = new wxPanel(this, -1, panelPos, panelSize);
 
     wxBoxSizer* mainVBox = new wxBoxSizer(wxVERTICAL);
@@ -681,35 +628,35 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     exeFileLabel = new wxStaticText(panel, wxID_ANY, wxT("Brute Forcer Executable:"));
 
     wxBoxSizer* exeFileLabelVBox = new wxBoxSizer(wxVERTICAL);
-    exeFileLabelVBox->Add(exeFileLabel, 0, wxTOP, 4);
-    exeFileHBox->Add(exeFileLabelVBox, 0, wxRIGHT, 100);
+    exeFileLabelVBox->Add(exeFileLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    exeFileHBox->Add(exeFileLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 100));
 
-    wxGridSizer* exeFileGrid = new wxGridSizer(1, 2, 4, 8);
+    wxGridSizer* exeFileGrid = new wxGridSizer(1, 2, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
     exeFileText = new wxTextCtrl(panel, ID_EXE_PATH, fst_gui->executablePath().string(), wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     exeFileGrid->Add(exeFileText, 0, wxALL | wxALIGN_CENTER, 0);
     exeBrowseButton = new wxButton(panel, ID_EXE_BROWSE_BUTTON, wxT("Browse..."));
-    exeFileGrid->Add(exeBrowseButton, 0, wxLEFT | wxALIGN_CENTER, 100);
+    exeFileGrid->Add(exeBrowseButton, 0, wxLEFT | wxALIGN_CENTER, (int)std::round(scaleFactor * 100));
 
     Connect(ID_EXE_BROWSE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickBrowse));
 
     wxSize fileTextSize = exeFileText->GetSize();
-    fileTextSize.SetWidth(340);
+    fileTextSize.SetWidth((int)std::round(scaleFactor * 340));
     exeFileText->SetMinSize(fileTextSize);
 
-    exeFileHBox->Add(exeFileGrid, 0, wxRIGHT, 8);
+    exeFileHBox->Add(exeFileGrid, 0, wxRIGHT, (int)std::round(scaleFactor * 8));
 
-    mainVBox->Add(exeFileHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(exeFileHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 20);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 20));
 
     wxBoxSizer* normHBox = new wxBoxSizer(wxHORIZONTAL);
     normLabel = new wxStaticText(panel, wxID_ANY, wxT("Platform Normal Search Range:"));
 
     wxBoxSizer* normLabelVBox = new wxBoxSizer(wxVERTICAL);
-    normLabelVBox->Add(normLabel, 0, wxTOP, 4);
-    normHBox->Add(normLabelVBox, 0, wxRIGHT, 8);
+    normLabelVBox->Add(normLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    normHBox->Add(normLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 8));
 
-    wxGridSizer* normGrid = new wxGridSizer(3, 3, 4, 8);
+    wxGridSizer* normGrid = new wxGridSizer(3, 3, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
 
     labelX = new wxStaticText(panel, wxID_ANY, wxT("X"));
     normGrid->Add(labelX, 0, wxALL | wxALIGN_CENTER, 0);
@@ -751,20 +698,20 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     Connect(ID_NORM_MIN_Z, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
     Connect(ID_NORM_MAX_Z, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
 
-    normHBox->Add(normGrid, 1);
+    normHBox->Add(normGrid, (int)std::round(scaleFactor * 1));
 
-    mainVBox->Add(normHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(normHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 10);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* samplesHBox = new wxBoxSizer(wxHORIZONTAL);
     samplesLabel = new wxStaticText(panel, wxID_ANY, wxT("Number of Normals to Test:"));
 
     wxBoxSizer* samplesLabelVBox = new wxBoxSizer(wxVERTICAL);
-    samplesLabelVBox->Add(samplesLabel, 0, wxTOP, 4);
-    samplesHBox->Add(samplesLabelVBox, 0, wxRIGHT, 26);
+    samplesLabelVBox->Add(samplesLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    samplesHBox->Add(samplesLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 26));
 
-    wxGridSizer* samplesGrid = new wxGridSizer(2, 3, 4, 8);
+    wxGridSizer* samplesGrid = new wxGridSizer(2, 3, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
 
     samplesX = new wxTextCtrl(panel, ID_NORM_SAMPLES_X, std::to_string(fst_gui->saveStruct.xSamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
     samplesGrid->Add(samplesX, 0, wxALL | wxALIGN_CENTER, 0);
@@ -788,21 +735,21 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     Connect(ID_NORM_SAMPLES_Y, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
     Connect(ID_NORM_SAMPLES_Z, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
 
-    samplesHBox->Add(samplesGrid, 1);
+    samplesHBox->Add(samplesGrid, (int)std::round(scaleFactor * 1));
 
-    mainVBox->Add(samplesHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(samplesHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 10);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* platformHBox = new wxBoxSizer(wxHORIZONTAL);
     platformLabel = new wxStaticText(panel, wxID_ANY,
         wxT("Pyramid Platform Position:"));
 
     wxBoxSizer* platformLabelVBox = new wxBoxSizer(wxVERTICAL);
-    platformLabelVBox->Add(platformLabel, 0, wxTOP, 4);
-    platformHBox->Add(platformLabelVBox, 0, wxRIGHT, 36);
+    platformLabelVBox->Add(platformLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    platformHBox->Add(platformLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 36));
 
-    wxGridSizer* platformGrid = new wxGridSizer(1, 3, 4, 24);
+    wxGridSizer* platformGrid = new wxGridSizer(1, 3, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 24));
 
     wxArrayString platformXOptions = { wxT("-1945"), wxT("-2866") };
     fst_gui->saveStruct.platformOption = std::max(std::min(fst_gui->saveStruct.platformOption, 1), 0);
@@ -814,48 +761,48 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     platformZ = new wxTextCtrl(panel, wxID_ANY, "-715", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     platformGrid->Add(platformZ, 0, wxALL | wxALIGN_CENTER, 0);
     platformX->SetMinSize(platformY->GetSize());
-    platformHBox->Add(platformGrid, 0, wxRIGHT, 8);
+    platformHBox->Add(platformGrid, 0, wxRIGHT, (int)std::round(scaleFactor * 8));
 
     Connect(ID_PLATFORM_X, wxEVT_COMBOBOX, wxCommandEventHandler(MainFrame::OnComboChange));
 
-    mainVBox->Add(platformHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(platformHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 10);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* outFileHBox = new wxBoxSizer(wxHORIZONTAL);
     outFileLabel = new wxStaticText(panel, wxID_ANY, wxT("Output Directory:"));
 
     wxBoxSizer* outFileLabelVBox = new wxBoxSizer(wxVERTICAL);
-    outFileLabelVBox->Add(outFileLabel, 0, wxTOP, 4);
-    outFileHBox->Add(outFileLabelVBox, 0, wxRIGHT, 110);
+    outFileLabelVBox->Add(outFileLabel, 0, wxTOP, (int)std::round(scaleFactor * 4));
+    outFileHBox->Add(outFileLabelVBox, 0, wxRIGHT, (int)std::round(scaleFactor * 110));
 
-    wxGridSizer* outFileGrid = new wxGridSizer(1, 2, 4, 8);
+    wxGridSizer* outFileGrid = new wxGridSizer(1, 2, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
     outFileText = new wxTextCtrl(panel, ID_OUT_PATH, fst_gui->saveStruct.outputDirectory.string());
     outFileGrid->Add(outFileText, 0, wxALL | wxALIGN_CENTER, 0);
     outBrowseButton = new wxButton(panel, ID_OUT_BROWSE_BUTTON, wxT("Browse..."));
-    outFileGrid->Add(outBrowseButton, 0, wxLEFT | wxALIGN_CENTER, 110);
+    outFileGrid->Add(outBrowseButton, 0, wxLEFT | wxALIGN_CENTER, (int)std::round(scaleFactor * 110));
 
     Connect(ID_OUT_PATH, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
     Connect(ID_OUT_BROWSE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickBrowse));
 
     fileTextSize = outFileText->GetSize();
-    fileTextSize.SetWidth(380);
+    fileTextSize.SetWidth((int)std::round(scaleFactor * 380));
     outFileText->SetMinSize(fileTextSize);
 
-    outFileHBox->Add(outFileGrid, 0, wxRIGHT, 8);
+    outFileHBox->Add(outFileGrid, 0, wxRIGHT, (int)std::round(scaleFactor * 8));
 
-    mainVBox->Add(outFileHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, 10);
+    mainVBox->Add(outFileHBox, 0, wxEXPAND | wxLEFT | wxRIGHT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 20);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 20));
 
     wxBoxSizer* buttonHBox = new wxBoxSizer(wxHORIZONTAL);
     showQueueButton = new wxButton(panel, ID_QUEUE_BUTTON, wxT("Show Queue"));
-    buttonHBox->Add(showQueueButton, 0, wxLEFT | wxBOTTOM, 5);
+    buttonHBox->Add(showQueueButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 5));
     gpuButton = new wxButton(panel, ID_GPU_BUTTON, wxT("GPU Settings"));
-    buttonHBox->Add(gpuButton, 0, wxLEFT | wxBOTTOM, 5);
+    buttonHBox->Add(gpuButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 5));
     runButton = new wxButton(panel, ID_RUN_BUTTON, wxT("Run Brute Forcer"));
-    buttonHBox->Add(runButton, 0, wxLEFT | wxBOTTOM, 5);
-    mainVBox->Add(buttonHBox, 0, wxALIGN_RIGHT | wxRIGHT, 10);
+    buttonHBox->Add(runButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 5));
+    mainVBox->Add(buttonHBox, 0, wxALIGN_RIGHT | wxRIGHT, (int)std::round(scaleFactor * 10));
 
     Connect(ID_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickQueue));
     Connect(ID_GPU_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickGPU));
@@ -870,36 +817,36 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     outputLabel = new wxStaticText(panel, wxID_ANY, wxT("Brute Forcer Output:"));
 
     outputLabelHBox->Add(outputLabel, 0);
-    mainVBox->Add(outputLabelHBox, 0, wxLEFT | wxTOP, 10);
+    mainVBox->Add(outputLabelHBox, 0, wxLEFT | wxTOP, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 10);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* outputHBox = new wxBoxSizer(wxHORIZONTAL);
     outputBox = new wxTextCtrl(panel, wxID_ANY, wxT(""), wxPoint(-1, -1), wxSize(-1, -1), wxTE_MULTILINE | wxTE_READONLY);
 
     outputHBox->Add(outputBox, 1, wxEXPAND);
-    mainVBox->Add(outputHBox, 1, wxLEFT | wxRIGHT | wxEXPAND, 10);
+    mainVBox->Add(outputHBox, 1, wxLEFT | wxRIGHT | wxEXPAND, (int)std::round(scaleFactor * 10));
 
-    mainVBox->Add(-1, 25);
+    mainVBox->Add(-1, (int)std::round(scaleFactor * 25));
 
     panel->SetSizerAndFit(mainVBox);
     panel->SetSize(panelSize);
 
-    wxPoint dummyPanelPos = { mfWidthNoQueue - 15, 0 };
-    wxSize dummyPanelSize = { 15, mfHeight - 60 };
+    wxPoint dummyPanelPos = { (int)std::round(scaleFactor * (mfWidthNoQueue - 15)), 0 };
+    wxSize dummyPanelSize = { (int)std::round(scaleFactor * 15), (int)std::round(scaleFactor * (mfHeight - 60)) };
     wxPanel* dummyPanel = new wxPanel(this, -1, dummyPanelPos, dummyPanelSize);
 
-    wxPoint linePanelPos = { mfWidthNoQueue, 0 };
-    wxSize linePanelSize = { 2, mfHeight - 60 };
+    wxPoint linePanelPos = { (int)std::round(scaleFactor * mfWidthNoQueue), 0 };
+    wxSize linePanelSize = { (int)std::round(scaleFactor * 2), (int)std::round(scaleFactor * (mfHeight - 60)) };
     wxPanel* linePanel = new wxPanel(this, -1, linePanelPos, linePanelSize);
     linePanel->SetBackgroundColour(wxColor(128, 128, 128));
 
-    wxPoint queuePanelPos = { mfWidthNoQueue + 2, 0 };
-    wxSize queuePanelSize = { mfWidthQueue - mfWidthNoQueue - 2, mfHeight - 60 };
+    wxPoint queuePanelPos = { (int)std::round(scaleFactor * (mfWidthNoQueue + 2)), 0 };
+    wxSize queuePanelSize = { (int)std::round(scaleFactor * (mfWidthQueue - mfWidthNoQueue - 2)), (int)std::round(scaleFactor * (mfHeight - 60)) };
     wxPanel* queuePanel = new wxPanel(this, -1, queuePanelPos, queuePanelSize);
 
     wxBoxSizer* queueHBox = new wxBoxSizer(wxHORIZONTAL);
-    queueHBox->AddSpacer(5);
+    queueHBox->AddSpacer((int)std::round(scaleFactor * 5));
     
     wxBoxSizer* queueVBox = new wxBoxSizer(wxVERTICAL);
     
@@ -907,28 +854,28 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     queueLabel = new wxStaticText(queuePanel, wxID_ANY, wxT("Block Queue:"));
 
     queueLabelHBox->Add(queueLabel, 0);
-    queueVBox->Add(queueLabelHBox, 0, wxLEFT | wxTOP | wxBOTTOM, 10);
+    queueVBox->Add(queueLabelHBox, 0, wxLEFT | wxTOP | wxBOTTOM, (int)std::round(scaleFactor * 10));
     
-    wxPoint queueListPos = { 100, 0 };
-    wxSize queueListSize = { mfWidthQueue - mfWidthNoQueue - 100, mfHeight - 150 };
+    wxPoint queueListPos = { (int)std::round(scaleFactor * 100), 0 };
+    wxSize queueListSize = { (int)std::round(scaleFactor * (mfWidthQueue - mfWidthNoQueue - 100)), (int)std::round(scaleFactor * (mfHeight - 150)) };
     wxArrayString queueEntries;
     fst_gui->blockQueue.getQueueStrings(queueEntries, runThread != nullptr);
     queueList = new wxListBox(queuePanel, ID_QUEUE_LIST, queueListPos, queueListSize, queueEntries, wxLB_SINGLE | wxLB_HSCROLL | wxLB_NEEDED_SB);
 
-    queueVBox->Add(queueList, 0, wxLEFT | wxALIGN_CENTER, 40);
+    queueVBox->Add(queueList, 0, wxLEFT | wxALIGN_CENTER, (int)std::round(scaleFactor * 40));
 
-    queueVBox->Add(-1, 10);
+    queueVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* queueButtonHBox = new wxBoxSizer(wxHORIZONTAL);
     addQueueButton = new wxButton(queuePanel, ID_ADD_QUEUE_BUTTON, wxT("Add Block"));
-    queueButtonHBox->Add(addQueueButton, 0, wxLEFT | wxBOTTOM, 10);
+    queueButtonHBox->Add(addQueueButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 10));
     importQueueButton = new wxButton(queuePanel, ID_IMPORT_QUEUE_BUTTON, wxT("Import From Log"));
-    queueButtonHBox->Add(importQueueButton, 0, wxLEFT | wxBOTTOM, 10);
+    queueButtonHBox->Add(importQueueButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 10));
     removeQueueButton = new wxButton(queuePanel, ID_REMOVE_QUEUE_BUTTON, wxT("Remove Block"));
-    queueButtonHBox->Add(removeQueueButton, 0, wxLEFT | wxBOTTOM, 10);
+    queueButtonHBox->Add(removeQueueButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 10));
     clearQueueButton = new wxButton(queuePanel, ID_CLEAR_QUEUE_BUTTON, wxT("Clear Queue"));
-    queueButtonHBox->Add(clearQueueButton, 0, wxLEFT | wxBOTTOM, 10);
-    queueVBox->Add(queueButtonHBox, 0, wxLEFT | wxALIGN_CENTER, 30);
+    queueButtonHBox->Add(clearQueueButton, 0, wxLEFT | wxBOTTOM, (int)std::round(scaleFactor * 10));
+    queueVBox->Add(queueButtonHBox, 0, wxLEFT | wxALIGN_CENTER, (int)std::round(scaleFactor * 30));
 
     Connect(ID_ADD_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickAddQueue));
     Connect(ID_IMPORT_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickImportQueue));

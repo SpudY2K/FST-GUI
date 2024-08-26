@@ -4,6 +4,12 @@
 #include <list>
 #include "Common/DeviceInfo.hpp"
 
+enum LogType {
+    LOG_INFO = 'I',
+    LOG_WARNING = 'W',
+    LOG_ERROR = 'E'
+};
+
 enum GPU_MODE {
     MODE_CUDA = 0,
     MODE_SYCL = 1,
@@ -11,7 +17,7 @@ enum GPU_MODE {
 };
 
 struct SaveData {
-    int version = 999;
+    int version = 1000;
 
     int platformOption = 0;
     int zModeOption = 0;
@@ -75,7 +81,9 @@ class BlockQueue
 public:
     BlockQueue(FST_GUI* f);
 
+    std::list<SaveData>::iterator queueBegin();
     bool queueEmpty();
+    int queueLength();
     bool addBlockToQueue(SaveData newBlock);
     bool addBlockToQueue();
     SaveData removeBlockFromQueue(int index);
@@ -107,7 +115,9 @@ public:
     virtual ~FST_GUI();
     virtual bool OnInit() override;
 
+    void loadToSaveStruct(std::ifstream& fs, SaveData* save);
     void loadSave();
+    void saveFromSaveStruct(std::ofstream& fs, SaveData* save);
     void saveSave();
     bool updateExecutableFile();
     bool updateExecutableFile(SaveData* blockData);
