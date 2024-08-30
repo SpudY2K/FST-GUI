@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <list>
 #include "Common/DeviceInfo.hpp"
+#include "MainFrame.hpp"
 
 enum LogType {
     LOG_INFO = 'I',
@@ -75,6 +76,7 @@ struct SaveData {
 };
 
 class FST_GUI;
+class MainFrame;
 
 class BlockQueue
 {
@@ -124,11 +126,13 @@ public:
     bool checkExecutable();
     bool checkExecutable(SaveData* blockData);
     bool askGPUMode();
+    int FilterEvent(wxEvent& event) override ;
 
 private:
     const std::filesystem::path saveFile = std::filesystem::current_path().append("fstguiSave.bin");
     std::vector<DeviceInfo> cudaDeviceList;
     std::vector<DeviceInfo> syclDeviceList;
+    MainFrame* mainFrame;
 };
 
 bool findExecutableFile(std::filesystem::path& executablePath);

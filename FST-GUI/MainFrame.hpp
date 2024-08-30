@@ -39,13 +39,18 @@ enum MainFrameIDs {
     ID_ADD_QUEUE_BUTTON = 1019,
     ID_REMOVE_QUEUE_BUTTON = 1020,
     ID_CLEAR_QUEUE_BUTTON = 1021,
-    ID_IMPORT_QUEUE_BUTTON = 1022
+    ID_IMPORT_QUEUE_BUTTON = 1022,
+    ID_CTRL_V = 1023
 };
+
+class FST_GUI;
+struct SaveData;
 
 class MainFrame : public wxFrame
 {
 public:
     MainFrame(const wxString& title, FST_GUI* f);
+    void OnKeyPress(wxKeyEvent& event);
     void OnTextChange(wxCommandEvent& event);
     void OnComboChange(wxCommandEvent& event);
     void OnClickBrowse(wxCommandEvent& event);
@@ -64,6 +69,7 @@ public:
     void RunNextBlock();
     void UpdateQueueList(int selectedIdx);
     void UpdateQueueList();
+    bool PasteFromClipboard();
 
     bool addBlockOnRun = true;
     bool removeBlockOnCancel = false;

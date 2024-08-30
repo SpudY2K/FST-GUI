@@ -3,7 +3,6 @@
 #include <fstream>
 #include <wx/wx.h>
 #include "FST-GUI.hpp"
-#include "MainFrame.hpp"
 #include "utils.hpp"
 #include "SYCLQuery/SYCLQuery.hpp"
 #include "CUDAQuery/CUDAQuery.hpp"
@@ -194,9 +193,24 @@ bool FST_GUI::OnInit()
 
     checkExecutable();
 
-	MainFrame* mainFrame = new MainFrame(L"BitFS Final Speed Transfer Brute Forcer Launch App", this);
+	mainFrame = new MainFrame(L"BitFS Final Speed Transfer Brute Forcer Launch App", this);
 	mainFrame->Show(true);
 	return true;
+}
+
+int FST_GUI::FilterEvent(wxEvent& event)
+{
+    if ((event.GetEventType() == wxEVT_KEY_DOWN) && (((wxKeyEvent&)event).ControlDown()) && (((wxKeyEvent&)event).GetKeyCode() == 'V') && mainFrame && mainFrame->IsActive())
+    {
+        if (mainFrame->PasteFromClipboard()) {
+            return true;
+        }
+        else {
+            return -1;
+        }
+    }
+
+    return -1;
 }
 
 const std::vector<DeviceInfo>& FST_GUI::deviceList() {

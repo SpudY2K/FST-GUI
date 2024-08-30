@@ -2,6 +2,7 @@
 #include "GPUFrame.hpp"
 #include "Logging.hpp"
 #include "utils.hpp"
+#include <wx/clipbrd.h>
 #include <wx/valnum.h>
 #include <wx/statline.h>
 #include <filesystem>
@@ -610,6 +611,119 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
     }
 }
 
+bool MainFrame::PasteFromClipboard() {
+    bool status = false;
+
+    if (wxTheClipboard->Open())
+    {
+        if (wxTheClipboard->IsSupported(wxDF_TEXT))
+        {
+            wxTextDataObject data;
+            wxTheClipboard->GetData(data);
+            wxString clipboardText = data.GetText();
+            std::list<wxString> clipboardElements;
+            int nElements = 0;
+            int nextTab = clipboardText.Find('\t');
+
+            while (nextTab != -1) {
+                clipboardElements.push_back(clipboardText.substr(0, nextTab));
+                clipboardText = clipboardText.substr(nextTab + 1);
+                nElements++;
+                nextTab = clipboardText.Find('\t');
+            }
+
+            if (!clipboardText.IsEmpty()) {
+                clipboardElements.push_back(clipboardText);
+                nElements++;
+            }
+
+            if (nElements >= 7) {
+                std::list<wxString>::iterator iter = clipboardElements.begin();
+
+                try {
+                    float minX = std::stof((*iter).ToStdString());
+                    iter++;
+                    float maxX = std::stof((*iter).ToStdString());
+                    iter++;
+                    float minY = std::stof((*iter).ToStdString());
+                    iter++;
+                    float maxY = std::stof((*iter).ToStdString());
+                    iter++;
+                    float minZ = std::stof((*iter).ToStdString());
+                    iter++;
+                    float maxZ = std::stof((*iter).ToStdString());
+                    iter++;
+
+                    float platX = std::stof((*iter).ToStdString());
+                    iter++;
+
+                    float platY = -3225.0f;
+                    float platZ = -715.0f;
+
+                    if (nElements >= 8) {
+                        platY = std::stof((*iter).ToStdString());
+                        iter++;
+                    }
+
+                    if (nElements >= 9) {
+                        platZ = std::stof((*iter).ToStdString());
+                        iter++;
+                    }
+
+                    if (platY == -3225 && platZ == -715) {
+                        int platformIdx = -1;
+
+                        if (platX == -1945) {
+                            platformIdx = 0;
+                        }
+                        else if (platX == -2866) {
+                            platformIdx = 1;
+                        }
+
+                        if (platformIdx != -1) {
+                            iter = clipboardElements.begin();
+                            this->comboZ->SetSelection(0);
+                            this->minBoxX->SetValue((*iter));
+                            iter++;
+                            this->maxBoxX->SetValue((*iter));
+                            iter++;
+                            this->minBoxY->SetValue((*iter));
+                            iter++;
+                            this->maxBoxY->SetValue((*iter));
+                            iter++;
+                            this->minBoxZ->SetValue((*iter));
+                            iter++;
+                            this->maxBoxZ->SetValue((*iter));
+                            this->samplesX->SetValue("41");
+                            this->samplesY->SetValue("41");
+                            this->samplesZ->SetValue("41");
+                            this->platformX->SetSelection(platformIdx);
+
+                            status = true;
+                        }
+                    }
+                }
+                catch (...) {
+                }
+            }
+        }
+
+        wxTheClipboard->Close();
+    }
+
+    return status;
+}
+
+void MainFrame::OnKeyPress(wxKeyEvent& event)
+{
+    if (event.ControlDown() and event.GetKeyCode() == 'V') {
+        this->PasteFromClipboard();
+    }
+    else {
+        event.Skip();
+    }
+}
+
 MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     : wxFrame(NULL, wxID_ANY, title, wxDefaultPosition, wxSize(mfWidthNoQueue, mfHeight), wxMINIMIZE_BOX | wxCAPTION | wxCLOSE_BOX | wxCLIP_CHILDREN)
 {
@@ -620,7 +734,7 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
 
     wxPoint panelPos = { 0, 0 };
     wxSize panelSize = { (int)std::round(scaleFactor * (mfWidthNoQueue - 15)), (int)std::round(scaleFactor * (mfHeight - 60)) };
-    wxPanel* panel = new wxPanel(this, -1, panelPos, panelSize);
+    wxPanel* panel = new wxPanel(this, -1, panelPos, panelSize, wxWANTS_CHARS);
 
     wxBoxSizer* mainVBox = new wxBoxSizer(wxVERTICAL);
 
@@ -889,6 +1003,9 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
 
     CreateStatusBar(1, wxSTB_DEFAULT_STYLE);
     statusBar = GetStatusBar();
+
+    //this->RegisterHotKey(ID_CTRL_V, wxMOD_CONTROL, 'V');
+    //panel->Bind(wxEVT_CHAR_HOOK, wxKeyEventHandler(MainFrame::OnKeyPress), this);
 
     Centre();
 
