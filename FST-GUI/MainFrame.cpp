@@ -400,8 +400,9 @@ void MainFrame::OnClickRun(wxCommandEvent& event) {
         fst_gui->saveSave();
 
         if (addBlockOnRun) {
-            this->AddBlockToQueue();
-            removeBlockOnCancel = true;
+            if (this->AddBlockToQueue()) {
+                removeBlockOnCancel = true;
+            }
         }
 
         this->RunNextBlock();
@@ -612,7 +613,7 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
 }
 
 bool MainFrame::PasteFromClipboard() {
-    bool status = false;
+    int addedBlocks = 0;
 
     if (wxTheClipboard->Open())
     {
@@ -621,97 +622,141 @@ bool MainFrame::PasteFromClipboard() {
             wxTextDataObject data;
             wxTheClipboard->GetData(data);
             wxString clipboardText = data.GetText();
-            std::list<wxString> clipboardElements;
-            int nElements = 0;
-            int nextTab = clipboardText.Find('\t');
 
-            while (nextTab != -1) {
-                clipboardElements.push_back(clipboardText.substr(0, nextTab));
-                clipboardText = clipboardText.substr(nextTab + 1);
-                nElements++;
-                nextTab = clipboardText.Find('\t');
-            }
+            int nextNewLine = clipboardText.Find("\n");
 
-            if (!clipboardText.IsEmpty()) {
-                clipboardElements.push_back(clipboardText);
-                nElements++;
-            }
+            std::list<wxString> lastGoodElements;
+            SaveData lastGoodBlock = fst_gui->saveStruct;
 
-            if (nElements >= 7) {
-                std::list<wxString>::iterator iter = clipboardElements.begin();
+            while (!clipboardText.IsEmpty()) {
+                wxString lineText = clipboardText.substr(0, (nextNewLine > -1) ? nextNewLine : clipboardText.Length());
+                clipboardText = clipboardText.substr((nextNewLine > -1) ? nextNewLine + 1 : clipboardText.Length());
 
-                try {
-                    float minX = std::stof((*iter).ToStdString());
-                    iter++;
-                    float maxX = std::stof((*iter).ToStdString());
-                    iter++;
-                    float minY = std::stof((*iter).ToStdString());
-                    iter++;
-                    float maxY = std::stof((*iter).ToStdString());
-                    iter++;
-                    float minZ = std::stof((*iter).ToStdString());
-                    iter++;
-                    float maxZ = std::stof((*iter).ToStdString());
-                    iter++;
+                std::list<wxString> lineElements;
+                int nElements = 0;
+                int nextTab = lineText.Find('\t');
 
-                    float platX = std::stof((*iter).ToStdString());
-                    iter++;
+                while (nextTab != -1) {
+                    lineElements.push_back(lineText.substr(0, nextTab));
+                    lineText = lineText.substr(nextTab + 1);
+                    nElements++;
+                    nextTab = lineText.Find('\t');
+                }
 
-                    float platY = -3225.0f;
-                    float platZ = -715.0f;
+                if (!lineText.IsEmpty()) {
+                    lineElements.push_back(lineText);
+                    nElements++;
+                }
 
-                    if (nElements >= 8) {
-                        platY = std::stof((*iter).ToStdString());
+                if (nElements >= 7) {
+                    std::list<wxString>::iterator iter = lineElements.begin();
+
+                    try {
+                        float minX = std::stof((*iter).ToStdString());
                         iter++;
-                    }
-
-                    if (nElements >= 9) {
-                        platZ = std::stof((*iter).ToStdString());
+                        float maxX = std::stof((*iter).ToStdString());
                         iter++;
+                        float minY = std::stof((*iter).ToStdString());
+                        iter++;
+                        float maxY = std::stof((*iter).ToStdString());
+                        iter++;
+                        float minZ = std::stof((*iter).ToStdString());
+                        iter++;
+                        float maxZ = std::stof((*iter).ToStdString());
+                        iter++;
+
+                        float platX = std::stof((*iter).ToStdString());
+                        iter++;
+
+                        float platY = -3225.0f;
+                        float platZ = -715.0f;
+
+                        if (nElements >= 8) {
+                            platY = std::stof((*iter).ToStdString());
+                            iter++;
+                        }
+
+                        if (nElements >= 9) {
+                            platZ = std::stof((*iter).ToStdString());
+                            iter++;
+                        }
+
+                        if (platY == -3225 && platZ == -715) {
+                            int platformIdx = -1;
+
+                            if (platX == -1945) {
+                                platformIdx = 0;
+                            }
+                            else if (platX == -2866) {
+                                platformIdx = 1;
+                            }
+
+                            if (platformIdx != -1) {
+                                if (addedBlocks > 0) {
+                                    fst_gui->blockQueue.addBlockToQueue(lastGoodBlock);
+                                }
+
+                                lastGoodBlock.zModeOption = 0;
+                                lastGoodBlock.xMin = minX;
+                                lastGoodBlock.xMax = maxX;
+                                lastGoodBlock.yMin = minY;
+                                lastGoodBlock.yMax = maxY;
+                                lastGoodBlock.zMin = minZ;
+                                lastGoodBlock.zMax = maxZ;
+                                lastGoodBlock.xSamples = 41;
+                                lastGoodBlock.ySamples = 41;
+                                lastGoodBlock.zSamples = 41;
+                                lastGoodBlock.platformOption = platformIdx;
+
+                                lastGoodElements = lineElements;
+
+                                addedBlocks++;
+                            }
+                        }
                     }
-
-                    if (platY == -3225 && platZ == -715) {
-                        int platformIdx = -1;
-
-                        if (platX == -1945) {
-                            platformIdx = 0;
-                        }
-                        else if (platX == -2866) {
-                            platformIdx = 1;
-                        }
-
-                        if (platformIdx != -1) {
-                            iter = clipboardElements.begin();
-                            this->comboZ->SetSelection(0);
-                            this->minBoxX->SetValue((*iter));
-                            iter++;
-                            this->maxBoxX->SetValue((*iter));
-                            iter++;
-                            this->minBoxY->SetValue((*iter));
-                            iter++;
-                            this->maxBoxY->SetValue((*iter));
-                            iter++;
-                            this->minBoxZ->SetValue((*iter));
-                            iter++;
-                            this->maxBoxZ->SetValue((*iter));
-                            this->samplesX->SetValue("41");
-                            this->samplesY->SetValue("41");
-                            this->samplesZ->SetValue("41");
-                            this->platformX->SetSelection(platformIdx);
-
-                            status = true;
-                        }
+                    catch (...) {
                     }
                 }
-                catch (...) {
+
+                nextNewLine = clipboardText.Find("\n");
+            }
+
+            if (addedBlocks > 0) {
+                if (addedBlocks > 1) {
+                    fst_gui->blockQueue.addBlockToQueue(lastGoodBlock);
+                    UpdateQueueList(fst_gui->blockQueue.queueLength() - 1);
                 }
+
+                fst_gui->saveStruct = lastGoodBlock;
+
+                std::list<wxString>::iterator iter = lastGoodElements.begin();
+
+                this->comboZ->SetSelection(0);
+                this->minBoxX->SetValue((*iter));
+                iter++;
+                this->maxBoxX->SetValue((*iter));
+                iter++;
+                this->minBoxY->SetValue((*iter));
+                iter++;
+                this->maxBoxY->SetValue((*iter));
+                iter++;
+                this->minBoxZ->SetValue((*iter));
+                iter++;
+                this->maxBoxZ->SetValue((*iter));
+                this->samplesX->SetValue("41");
+                this->samplesY->SetValue("41");
+                this->samplesZ->SetValue("41");
+                this->platformX->SetSelection(lastGoodBlock.platformOption);
+
+                addBlockOnRun = (addedBlocks == 1);
+                removeBlockOnCancel = (addedBlocks == 1);
             }
         }
 
         wxTheClipboard->Close();
     }
 
-    return status;
+    return (addedBlocks > 0);
 }
 
 void MainFrame::OnKeyPress(wxKeyEvent& event)
@@ -1003,9 +1048,6 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
 
     CreateStatusBar(1, wxSTB_DEFAULT_STYLE);
     statusBar = GetStatusBar();
-
-    //this->RegisterHotKey(ID_CTRL_V, wxMOD_CONTROL, 'V');
-    //panel->Bind(wxEVT_CHAR_HOOK, wxKeyEventHandler(MainFrame::OnKeyPress), this);
 
     Centre();
 
