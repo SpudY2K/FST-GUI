@@ -17,9 +17,7 @@ enum GPU_MODE {
     MODE_NONE = 2
 };
 
-struct SaveData {
-    int version = 1000;
-
+struct BlockData {
     int platformOption = 0;
     int zModeOption = 0;
 
@@ -33,6 +31,12 @@ struct SaveData {
     int xSamples = 41;
     int ySamples = 41;
     int zSamples = 41;
+};
+
+struct SaveData {
+    int version = 1001;
+
+    BlockData blockData;
 
     std::filesystem::path outputDirectory = std::filesystem::current_path().append("results");
 
@@ -83,22 +87,22 @@ class BlockQueue
 public:
     BlockQueue(FST_GUI* f);
 
-    std::list<SaveData>::iterator queueBegin();
+    std::list<BlockData>::iterator queueBegin();
     bool queueEmpty();
     int queueLength();
-    bool addBlockToQueue(SaveData newBlock);
+    bool addBlockToQueue(BlockData newBlock);
     bool addBlockToQueue();
-    SaveData removeBlockFromQueue(int index);
-    SaveData getNextBlockInQueue();
+    BlockData removeBlockFromQueue(int index);
+    BlockData getNextBlockInQueue();
     void getQueueStrings(wxArrayString& queueStrings, bool running);
     void clearQueue(bool removeFirst);
 
 private:
-    std::list<SaveData> queue;
+    std::list<BlockData> queue;
     FST_GUI* fst_gui;
 };
 
-bool compareBlocks(SaveData* s1, SaveData* s2);
+bool compareBlocks(BlockData* s1, BlockData* s2);
 
 class FST_GUI : public wxApp
 {
@@ -111,22 +115,19 @@ public:
 
     const std::vector<DeviceInfo>& deviceList();
     std::filesystem::path executablePath();
-    std::filesystem::path executablePath(SaveData* blockData);
 
     FST_GUI();
     virtual ~FST_GUI();
     virtual bool OnInit() override;
 
-    void loadToSaveStruct(std::ifstream& fs, SaveData* save);
+    void loadToBlockStruct(std::ifstream& fs, BlockData* save);
     void loadSave();
-    void saveFromSaveStruct(std::ofstream& fs, SaveData* save);
+    void saveFromBlockStruct(std::ofstream& fs, BlockData* save);
     void saveSave();
     bool updateExecutableFile();
-    bool updateExecutableFile(SaveData* blockData);
     bool checkExecutable();
-    bool checkExecutable(SaveData* blockData);
     bool askGPUMode();
-    int FilterEvent(wxEvent& event) override ;
+    int FilterEvent(wxEvent& event) override;
 
 private:
     const std::filesystem::path saveFile = std::filesystem::current_path().append("fstguiSave.bin");

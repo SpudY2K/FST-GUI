@@ -35,6 +35,9 @@ void MainFrame::OnThreadCompletion(wxThreadEvent& event)
             UpdateQueueList(this->queueList->GetSelection() - 1);
             fst_gui->saveSave();
         }
+        else {
+            UpdateQueueList();
+        }
 
         statusBar->SetStatusText("");
         runButton->SetLabelText("Run Brute Forcer");
@@ -66,21 +69,21 @@ void MainFrame::OnThreadUpdate(wxThreadEvent& event)
     }
 }
 
-void MainFrame::SetupArgs(SaveData* blockParams, std::vector<std::string>& args) {
+void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args) {
     const int filename_float_precision = 6;
 
     std::string outFileName = "fstSearch_" + float2string(blockParams->xMin, filename_float_precision) + "_" + float2string(blockParams->xMax, filename_float_precision) + "_"
         + float2string(blockParams->yMin, filename_float_precision) + "_" + float2string(blockParams->yMax, filename_float_precision) + "_" + float2string(blockParams->zMin, filename_float_precision)
         + "_" + float2string(blockParams->zMax, filename_float_precision) + "_" + std::to_string(blockParams->xSamples) + "_" + std::to_string(blockParams->ySamples) + "_" + std::to_string(blockParams->zSamples) + "_" + platformX->GetString(blockParams->platformOption).ToStdString() + ".csv";
 
-    std::filesystem::path outFilePath = blockParams->outputDirectory;
+    std::filesystem::path outFilePath = fst_gui->saveStruct.outputDirectory;
     outFilePath.append(outFileName);
 
     int i = 0;
 
     while (std::filesystem::exists(outFilePath)) {
         std::string newOutFileName = outFileName.substr(0, outFileName.size() - 4) + "_" + std::to_string(i) + ".csv";
-        outFilePath = blockParams->outputDirectory;
+        outFilePath = fst_gui->saveStruct.outputDirectory;
         outFilePath.append(newOutFileName);
         i++;
     }
@@ -114,55 +117,55 @@ void MainFrame::SetupArgs(SaveData* blockParams, std::vector<std::string>& args)
     args.emplace_back("-m");
     args.emplace_back("1");
     args.emplace_back("-d");
-    args.emplace_back(std::to_string(blockParams->gpuDeviceID));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.gpuDeviceID));
     args.emplace_back("-t");
-    args.emplace_back(std::to_string(blockParams->maxThreads));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.maxThreads));
     args.emplace_back("-lsk1");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_ONE));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_ONE));
     args.emplace_back("-lsk2a");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_TWO_A));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_TWO_A));
     args.emplace_back("-lsk2b");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_TWO_B));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_TWO_B));
     args.emplace_back("-lsk2c");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_TWO_C));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_TWO_C));
     args.emplace_back("-lsk2d");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_TWO_D));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_TWO_D));
     args.emplace_back("-lsk3");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_THREE));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_THREE));
     args.emplace_back("-lsk4");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_FOUR));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_FOUR));
     args.emplace_back("-lsk5");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_FIVE));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_FIVE));
     args.emplace_back("-lsk6");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_PHASE_SIX));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_PHASE_SIX));
     args.emplace_back("-lp");
-    args.emplace_back(std::to_string(blockParams->MAX_PLAT_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_PLAT_SOLUTIONS));
     args.emplace_back("-lu");
-    args.emplace_back(std::to_string(blockParams->MAX_UPWARP_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_UPWARP_SOLUTIONS));
     args.emplace_back("-lsku");
-    args.emplace_back(std::to_string(blockParams->MAX_SK_UPWARP_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SK_UPWARP_SOLUTIONS));
     args.emplace_back("-ls");
-    args.emplace_back(std::to_string(blockParams->MAX_SPEED_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SPEED_SOLUTIONS));
     args.emplace_back("-l10k");
-    args.emplace_back(std::to_string(blockParams->MAX_10K_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_10K_SOLUTIONS));
     args.emplace_back("-lbd");
-    args.emplace_back(std::to_string(blockParams->MAX_BD_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_BD_SOLUTIONS));
     args.emplace_back("-ld10k");
-    args.emplace_back(std::to_string(blockParams->MAX_DOUBLE_10K_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_DOUBLE_10K_SOLUTIONS));
     args.emplace_back("-lbp");
-    args.emplace_back(std::to_string(blockParams->MAX_BULLY_PUSH_SOLUTIONS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_BULLY_PUSH_SOLUTIONS));
     args.emplace_back("-lsq");
-    args.emplace_back(std::to_string(blockParams->MAX_SQUISH_SPOTS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SQUISH_SPOTS));
     args.emplace_back("-lst");
-    args.emplace_back(std::to_string(blockParams->MAX_STRAIN_SETUPS));
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_STRAIN_SETUPS));
     args.emplace_back("-v");
     args.emplace_back("-b");
 }
 
 void MainFrame::RunNextBlock() {
-    SaveData blockData = fst_gui->blockQueue.getNextBlockInQueue();
+    BlockData blockData = fst_gui->blockQueue.getNextBlockInQueue();
 
-    if (!fst_gui->checkExecutable(&blockData)) {
+    if (!fst_gui->checkExecutable()) {
         outputBox->ChangeValue("Error: Could not find executable file.");
         return;
     }
@@ -176,7 +179,7 @@ void MainFrame::RunNextBlock() {
     switch (fst_gui->saveStruct.gpuModeSelected) {
     case MODE_CUDA:
     case MODE_SYCL:
-        runThread = new RunThread(this, fst_gui->executablePath(&blockData).string(), args);
+        runThread = new RunThread(this, fst_gui->executablePath().string(), args);
         break;
     default:
         return;
@@ -262,8 +265,6 @@ void MainFrame::OnClickClearQueue(wxCommandEvent& event) {
     fst_gui->saveSave();
 }
 
-
-
 void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
     wxFileDialog openFileDialog(this, "Open log file", fst_gui->saveStruct.outputDirectory.string(), "", "Log files (*.log)|*.log", wxFD_OPEN | wxFD_FILE_MUST_EXIST);
     int result = openFileDialog.ShowModal();
@@ -286,7 +287,7 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
         float normal[3];
         float position[3];
 
-        SaveData blockData = fst_gui->saveStruct;
+        BlockData blockData;
         unsigned int blockStatus = 0;
         int samplesSearched = 0;
         float lastSampleSearched = 0.0f;
@@ -300,7 +301,7 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
                 if (l == LOG_WARNING) {
                     if (GetNormalFromLogLine(line, normal, position)) {
                         if ((position[0] == -1945 || position[0] == -2866) && position[1] == -3225 && position[2] == -715) {
-                            SaveData newBlock = fst_gui->saveStruct;
+                            BlockData newBlock;
 
                             newBlock.xMin = normal[0];
                             newBlock.xMax = normal[0];
@@ -356,7 +357,7 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
     }
 }
 
-bool MainFrame::AddBlockToQueue() {
+bool MainFrame::CheckOutputDirectory() {
     std::filesystem::path outputPath = fst_gui->saveStruct.outputDirectory;
 
     if (!std::filesystem::exists(outputPath)) {
@@ -385,6 +386,10 @@ bool MainFrame::AddBlockToQueue() {
         }
     }
 
+    return true;
+}
+
+bool MainFrame::AddBlockToQueue() {
     bool success = fst_gui->blockQueue.addBlockToQueue();
 
     if (success) {
@@ -399,13 +404,15 @@ void MainFrame::OnClickRun(wxCommandEvent& event) {
     if (!runThread) {
         fst_gui->saveSave();
 
-        if (addBlockOnRun) {
-            if (this->AddBlockToQueue()) {
-                removeBlockOnCancel = true;
+        if (CheckOutputDirectory()) {
+            if (addBlockOnRun) {
+                if (this->AddBlockToQueue()) {
+                    removeBlockOnCancel = true;
+                }
             }
-        }
 
-        this->RunNextBlock();
+            this->RunNextBlock();
+        }
     }
     else {
         runCancelled = true;
@@ -449,12 +456,12 @@ void MainFrame::OnComboChange(wxCommandEvent& event) {
 
     switch (event.GetId()) {
     case ID_NORM_Z_MODE:
-        fst_gui->saveStruct.zModeOption = comboBox->GetSelection();
+        fst_gui->saveStruct.blockData.zModeOption = comboBox->GetSelection();
         fst_gui->saveSave();
         addBlockOnRun = true;
         break;
     case ID_PLATFORM_X:
-        fst_gui->saveStruct.platformOption = comboBox->GetSelection();
+        fst_gui->saveStruct.blockData.platformOption = comboBox->GetSelection();
         fst_gui->saveSave();
         addBlockOnRun = true;
         break;
@@ -468,11 +475,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
     switch (event.GetId()) {
     case ID_NORM_MIN_X:
         try {
-            fst_gui->saveStruct.xMin = std::stof(s);
-            if (fst_gui->saveStruct.xMin == fst_gui->saveStruct.xMax && fst_gui->saveStruct.xSamples == 1) {
+            fst_gui->saveStruct.blockData.xMin = std::stof(s);
+            if (fst_gui->saveStruct.blockData.xMin == fst_gui->saveStruct.blockData.xMax && fst_gui->saveStruct.blockData.xSamples == 1) {
                 gapsX->ChangeValue("0");
             } else {
-                float xGap = (fst_gui->saveStruct.xMax == fst_gui->saveStruct.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.xMax - fst_gui->saveStruct.xMin) / (float)(fst_gui->saveStruct.xSamples - 1);
+                float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
                 gapsX->ChangeValue(float2string(xGap, float_precision));
             }
 
@@ -483,11 +490,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_MAX_X:
         try {
-            fst_gui->saveStruct.xMax = std::stof(s);
-            if (fst_gui->saveStruct.xMin == fst_gui->saveStruct.xMax || fst_gui->saveStruct.xSamples == 1) {
+            fst_gui->saveStruct.blockData.xMax = std::stof(s);
+            if (fst_gui->saveStruct.blockData.xMin == fst_gui->saveStruct.blockData.xMax || fst_gui->saveStruct.blockData.xSamples == 1) {
                 gapsX->ChangeValue("0");
             } else {
-                float xGap = (fst_gui->saveStruct.xMax == fst_gui->saveStruct.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.xMax - fst_gui->saveStruct.xMin) / (float)(fst_gui->saveStruct.xSamples - 1);
+                float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
                 gapsX->ChangeValue(float2string(xGap, float_precision));
             }
 
@@ -498,11 +505,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_MIN_Y:
         try {
-            fst_gui->saveStruct.yMin = std::stof(s);
-            if (fst_gui->saveStruct.yMin == fst_gui->saveStruct.yMax || fst_gui->saveStruct.ySamples == 1) {
+            fst_gui->saveStruct.blockData.yMin = std::stof(s);
+            if (fst_gui->saveStruct.blockData.yMin == fst_gui->saveStruct.blockData.yMax || fst_gui->saveStruct.blockData.ySamples == 1) {
                 gapsY->ChangeValue("0");
             } else {
-                float yGap = (fst_gui->saveStruct.yMax == fst_gui->saveStruct.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.yMax - fst_gui->saveStruct.yMin) / (float)(fst_gui->saveStruct.ySamples - 1);
+                float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
                 gapsY->ChangeValue(float2string(yGap, float_precision));
             }
 
@@ -513,11 +520,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_MAX_Y:
         try {
-            fst_gui->saveStruct.yMax = std::stof(s);
-            if (fst_gui->saveStruct.yMin == fst_gui->saveStruct.yMax || fst_gui->saveStruct.ySamples == 1) {
+            fst_gui->saveStruct.blockData.yMax = std::stof(s);
+            if (fst_gui->saveStruct.blockData.yMin == fst_gui->saveStruct.blockData.yMax || fst_gui->saveStruct.blockData.ySamples == 1) {
                 gapsY->ChangeValue("0");
             } else {
-                float yGap = (fst_gui->saveStruct.yMax == fst_gui->saveStruct.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.yMax - fst_gui->saveStruct.yMin) / (float)(fst_gui->saveStruct.ySamples - 1);
+                float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
                 gapsY->ChangeValue(float2string(yGap, float_precision));
             }
 
@@ -528,11 +535,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_MIN_Z:
         try {
-            fst_gui->saveStruct.zMin = std::stof(s);
-            if (fst_gui->saveStruct.zMin == fst_gui->saveStruct.zMax || fst_gui->saveStruct.zSamples == 1) {
+            fst_gui->saveStruct.blockData.zMin = std::stof(s);
+            if (fst_gui->saveStruct.blockData.zMin == fst_gui->saveStruct.blockData.zMax || fst_gui->saveStruct.blockData.zSamples == 1) {
                 gapsZ->ChangeValue("0");
             } else {
-                float zGap = (fst_gui->saveStruct.zMax == fst_gui->saveStruct.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.zMax - fst_gui->saveStruct.zMin) / (float)(fst_gui->saveStruct.zSamples - 1);
+                float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
                 gapsZ->ChangeValue(float2string(zGap, float_precision));
             }
 
@@ -543,11 +550,11 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_MAX_Z:
         try {
-            fst_gui->saveStruct.zMax = std::stof(s);
-            if (fst_gui->saveStruct.zMin == fst_gui->saveStruct.zMax && fst_gui->saveStruct.zSamples == 1) {
+            fst_gui->saveStruct.blockData.zMax = std::stof(s);
+            if (fst_gui->saveStruct.blockData.zMin == fst_gui->saveStruct.blockData.zMax && fst_gui->saveStruct.blockData.zSamples == 1) {
                 gapsZ->ChangeValue("0");
             } else {
-                float zGap = (fst_gui->saveStruct.zMax == fst_gui->saveStruct.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.zMax - fst_gui->saveStruct.zMin) / (float)(fst_gui->saveStruct.zSamples - 1);
+                float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
                 gapsZ->ChangeValue(float2string(zGap, float_precision));
             }
 
@@ -558,13 +565,13 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_SAMPLES_X:
         try {
-            fst_gui->saveStruct.xSamples = std::stoi(s);
-            if (fst_gui->saveStruct.xSamples == 1 && fst_gui->saveStruct.xMax != fst_gui->saveStruct.xMin) {
-                fst_gui->saveStruct.xMax = fst_gui->saveStruct.xMin;
-                maxBoxX->ChangeValue(float2string(fst_gui->saveStruct.xMax, float_precision));
+            fst_gui->saveStruct.blockData.xSamples = std::stoi(s);
+            if (fst_gui->saveStruct.blockData.xSamples == 1 && fst_gui->saveStruct.blockData.xMax != fst_gui->saveStruct.blockData.xMin) {
+                fst_gui->saveStruct.blockData.xMax = fst_gui->saveStruct.blockData.xMin;
+                maxBoxX->ChangeValue(float2string(fst_gui->saveStruct.blockData.xMax, float_precision));
             }
 
-            float xGap = (fst_gui->saveStruct.xMax == fst_gui->saveStruct.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.xMax - fst_gui->saveStruct.xMin) / (float)(fst_gui->saveStruct.xSamples - 1);
+            float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
             gapsX->ChangeValue(float2string(xGap, float_precision));
 
             addBlockOnRun = true;
@@ -574,13 +581,13 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_SAMPLES_Y:
         try {
-            fst_gui->saveStruct.ySamples = std::stoi(s);
-            if (fst_gui->saveStruct.ySamples == 1 && fst_gui->saveStruct.yMax != fst_gui->saveStruct.yMin) {
-                fst_gui->saveStruct.yMax = fst_gui->saveStruct.yMin;
-                maxBoxY->ChangeValue(float2string(fst_gui->saveStruct.yMax, float_precision));
+            fst_gui->saveStruct.blockData.ySamples = std::stoi(s);
+            if (fst_gui->saveStruct.blockData.ySamples == 1 && fst_gui->saveStruct.blockData.yMax != fst_gui->saveStruct.blockData.yMin) {
+                fst_gui->saveStruct.blockData.yMax = fst_gui->saveStruct.blockData.yMin;
+                maxBoxY->ChangeValue(float2string(fst_gui->saveStruct.blockData.yMax, float_precision));
             }
 
-            float yGap = (fst_gui->saveStruct.yMax == fst_gui->saveStruct.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.yMax - fst_gui->saveStruct.yMin) / (float)(fst_gui->saveStruct.ySamples - 1);
+            float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
             gapsY->ChangeValue(float2string(yGap, float_precision));
 
             addBlockOnRun = true;
@@ -590,13 +597,13 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
         break;
     case ID_NORM_SAMPLES_Z:
         try {
-            fst_gui->saveStruct.zSamples = std::stoi(s);
-            if (fst_gui->saveStruct.zSamples == 1 && fst_gui->saveStruct.zMax != fst_gui->saveStruct.zMin) {
-                fst_gui->saveStruct.zMax = fst_gui->saveStruct.zMin;
-                maxBoxZ->ChangeValue(float2string(fst_gui->saveStruct.zMax, float_precision));
+            fst_gui->saveStruct.blockData.zSamples = std::stoi(s);
+            if (fst_gui->saveStruct.blockData.zSamples == 1 && fst_gui->saveStruct.blockData.zMax != fst_gui->saveStruct.blockData.zMin) {
+                fst_gui->saveStruct.blockData.zMax = fst_gui->saveStruct.blockData.zMin;
+                maxBoxZ->ChangeValue(float2string(fst_gui->saveStruct.blockData.zMax, float_precision));
             }
 
-            float zGap = (fst_gui->saveStruct.zMax == fst_gui->saveStruct.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.zMax - fst_gui->saveStruct.zMin) / (float)(fst_gui->saveStruct.zSamples - 1);
+            float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
             gapsZ->ChangeValue(float2string(zGap, float_precision));
 
             addBlockOnRun = true;
@@ -626,7 +633,7 @@ bool MainFrame::PasteFromClipboard() {
             int nextNewLine = clipboardText.Find("\n");
 
             std::list<wxString> lastGoodElements;
-            SaveData lastGoodBlock = fst_gui->saveStruct;
+            BlockData lastGoodBlock;
 
             while (!clipboardText.IsEmpty()) {
                 wxString lineText = clipboardText.substr(0, (nextNewLine > -1) ? nextNewLine : clipboardText.Length());
@@ -727,7 +734,7 @@ bool MainFrame::PasteFromClipboard() {
                     UpdateQueueList(fst_gui->blockQueue.queueLength() - 1);
                 }
 
-                fst_gui->saveStruct = lastGoodBlock;
+                fst_gui->saveStruct.blockData = lastGoodBlock;
 
                 std::list<wxString>::iterator iter = lastGoodElements.begin();
 
@@ -823,9 +830,9 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     normGrid->Add(labelY, 0, wxALL | wxALIGN_CENTER, 0);
 
     wxArrayString comboZOptions = { wxT("XZ Sum"), wxT("Z") };
-    fst_gui->saveStruct.zModeOption = std::max(std::min(fst_gui->saveStruct.zModeOption, 1), 0);
+    fst_gui->saveStruct.blockData.zModeOption = std::max(std::min(fst_gui->saveStruct.blockData.zModeOption, 1), 0);
 
-    comboZ = new wxComboBox(panel, ID_NORM_Z_MODE, comboZOptions[fst_gui->saveStruct.zModeOption], wxDefaultPosition, wxDefaultSize, comboZOptions, wxCB_READONLY);
+    comboZ = new wxComboBox(panel, ID_NORM_Z_MODE, comboZOptions[fst_gui->saveStruct.blockData.zModeOption], wxDefaultPosition, wxDefaultSize, comboZOptions, wxCB_READONLY);
     normGrid->Add(comboZ, 0, wxALL | wxALIGN_CENTER, 0);
 
     Connect(ID_NORM_Z_MODE, wxEVT_COMBOBOX, wxCommandEventHandler(MainFrame::OnComboChange));
@@ -836,18 +843,18 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     floatVal.SetRange(-1.0f, 1.0f);
     intVal.SetMin(1);
 
-    minBoxX = new wxTextCtrl(panel, ID_NORM_MIN_X, float2string(fst_gui->saveStruct.xMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    minBoxX = new wxTextCtrl(panel, ID_NORM_MIN_X, float2string(fst_gui->saveStruct.blockData.xMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(minBoxX, 0, wxALL | wxALIGN_CENTER, 0);
-    minBoxY = new wxTextCtrl(panel, ID_NORM_MIN_Y, float2string(fst_gui->saveStruct.yMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    minBoxY = new wxTextCtrl(panel, ID_NORM_MIN_Y, float2string(fst_gui->saveStruct.blockData.yMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(minBoxY, 0, wxALL | wxALIGN_CENTER, 0);
-    minBoxZ = new wxTextCtrl(panel, ID_NORM_MIN_Z, float2string(fst_gui->saveStruct.zMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    minBoxZ = new wxTextCtrl(panel, ID_NORM_MIN_Z, float2string(fst_gui->saveStruct.blockData.zMin, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(minBoxZ, 0, wxALL | wxALIGN_CENTER, 0);
 
-    maxBoxX = new wxTextCtrl(panel, ID_NORM_MAX_X, float2string(fst_gui->saveStruct.xMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    maxBoxX = new wxTextCtrl(panel, ID_NORM_MAX_X, float2string(fst_gui->saveStruct.blockData.xMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(maxBoxX, 0, wxALL | wxALIGN_CENTER, 0);
-    maxBoxY = new wxTextCtrl(panel, ID_NORM_MAX_Y, float2string(fst_gui->saveStruct.yMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    maxBoxY = new wxTextCtrl(panel, ID_NORM_MAX_Y, float2string(fst_gui->saveStruct.blockData.yMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(maxBoxY, 0, wxALL | wxALIGN_CENTER, 0);
-    maxBoxZ = new wxTextCtrl(panel, ID_NORM_MAX_Z, float2string(fst_gui->saveStruct.zMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
+    maxBoxZ = new wxTextCtrl(panel, ID_NORM_MAX_Z, float2string(fst_gui->saveStruct.blockData.zMax, float_precision), wxDefaultPosition, wxDefaultSize, 0, floatVal);
     normGrid->Add(maxBoxZ, 0, wxALL | wxALIGN_CENTER, 0);
 
     Connect(ID_NORM_MIN_X, wxEVT_TEXT, wxCommandEventHandler(MainFrame::OnTextChange));
@@ -872,16 +879,16 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
 
     wxGridSizer* samplesGrid = new wxGridSizer(2, 3, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 8));
 
-    samplesX = new wxTextCtrl(panel, ID_NORM_SAMPLES_X, std::to_string(fst_gui->saveStruct.xSamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
+    samplesX = new wxTextCtrl(panel, ID_NORM_SAMPLES_X, std::to_string(fst_gui->saveStruct.blockData.xSamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
     samplesGrid->Add(samplesX, 0, wxALL | wxALIGN_CENTER, 0);
-    samplesY = new wxTextCtrl(panel, ID_NORM_SAMPLES_Y, std::to_string(fst_gui->saveStruct.ySamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
+    samplesY = new wxTextCtrl(panel, ID_NORM_SAMPLES_Y, std::to_string(fst_gui->saveStruct.blockData.ySamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
     samplesGrid->Add(samplesY, 0, wxALL | wxALIGN_CENTER, 0);
-    samplesZ = new wxTextCtrl(panel, ID_NORM_SAMPLES_Z, std::to_string(fst_gui->saveStruct.zSamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
+    samplesZ = new wxTextCtrl(panel, ID_NORM_SAMPLES_Z, std::to_string(fst_gui->saveStruct.blockData.zSamples), wxDefaultPosition, wxDefaultSize, 0, intVal);
     samplesGrid->Add(samplesZ, 0, wxALL | wxALIGN_CENTER, 0);
 
-    float xGap = (fst_gui->saveStruct.xMax == fst_gui->saveStruct.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.xMax - fst_gui->saveStruct.xMin) / (float)(fst_gui->saveStruct.xSamples - 1);
-    float yGap = (fst_gui->saveStruct.yMax == fst_gui->saveStruct.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.yMax - fst_gui->saveStruct.yMin) / (float)(fst_gui->saveStruct.ySamples - 1);
-    float zGap = (fst_gui->saveStruct.zMax == fst_gui->saveStruct.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.zMax - fst_gui->saveStruct.zMin) / (float)(fst_gui->saveStruct.zSamples - 1);
+    float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
+    float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
+    float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
 
     gapsX = new wxTextCtrl(panel, wxID_ANY, float2string(xGap, float_precision), wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     samplesGrid->Add(gapsX, 0, wxALL | wxALIGN_CENTER, 0);
@@ -911,9 +918,9 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     wxGridSizer* platformGrid = new wxGridSizer(1, 3, (int)std::round(scaleFactor * 4), (int)std::round(scaleFactor * 24));
 
     wxArrayString platformXOptions = { wxT("-1945"), wxT("-2866") };
-    fst_gui->saveStruct.platformOption = std::max(std::min(fst_gui->saveStruct.platformOption, 1), 0);
+    fst_gui->saveStruct.blockData.platformOption = std::max(std::min(fst_gui->saveStruct.blockData.platformOption, 1), 0);
 
-    platformX = new wxComboBox(panel, ID_PLATFORM_X, platformXOptions[fst_gui->saveStruct.platformOption], wxDefaultPosition, wxDefaultSize, platformXOptions, wxCB_READONLY);
+    platformX = new wxComboBox(panel, ID_PLATFORM_X, platformXOptions[fst_gui->saveStruct.blockData.platformOption], wxDefaultPosition, wxDefaultSize, platformXOptions, wxCB_READONLY);
     platformGrid->Add(platformX, 0, wxALL | wxALIGN_CENTER, 0);
     platformY = new wxTextCtrl(panel, wxID_ANY, "-3225", wxDefaultPosition, wxDefaultSize, wxTE_READONLY);
     platformGrid->Add(platformY, 0, wxALL | wxALIGN_CENTER, 0);

@@ -44,7 +44,7 @@ enum MainFrameIDs {
 };
 
 class FST_GUI;
-struct SaveData;
+struct BlockData;
 
 class MainFrame : public wxFrame
 {
@@ -65,6 +65,7 @@ public:
     void OnThreadUpdate(wxThreadEvent& event);
     void OnClose(wxCloseEvent& event);
     void UpdateExePath();
+    bool CheckOutputDirectory();
     bool AddBlockToQueue();
     void RunNextBlock();
     void UpdateQueueList(int selectedIdx);
@@ -79,7 +80,7 @@ protected:
     friend class RunThread;
 
 private:
-    void SetupArgs(SaveData* blockParams, std::vector<std::string>& args);
+    void SetupArgs(BlockData* blockParams, std::vector<std::string>& args);
 
     const int maxOutputLines = 10000;
     const int float_precision = 9;

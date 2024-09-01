@@ -220,7 +220,7 @@ bool CheckLineForCompletion(std::string line) {
     return line.starts_with("Search Completed");
 }
 
-bool GetOptionFromLine(std::string line, SaveData& blockData, unsigned int& blockStatus) {
+bool GetOptionFromLine(std::string line, BlockData& blockData, unsigned int& blockStatus) {
     if (!line.starts_with("Option - ")) {
         return false;
     }
