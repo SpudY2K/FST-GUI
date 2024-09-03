@@ -1,4 +1,4 @@
-#include "MainFrame.hpp"
+﻿#include "MainFrame.hpp"
 #include "GPUFrame.hpp"
 #include "Logging.hpp"
 #include "utils.hpp"
@@ -236,6 +236,29 @@ void MainFrame::OnClickQueue(wxCommandEvent& event) {
 
     queueVisible = !queueVisible;
     this->SetSize(size);
+}
+
+void MainFrame::MoveQueue(int source, int target) {
+    if (fst_gui->blockQueue.moveElement(source, target)) {
+        UpdateQueueList(target);
+        fst_gui->saveSave();
+    }
+}
+
+void MainFrame::OnClickQueueTop(wxCommandEvent& event) {
+    MoveQueue(queueList->GetSelection(), 0);
+}
+
+void MainFrame::OnClickQueueUp(wxCommandEvent& event) {
+    MoveQueue(queueList->GetSelection(), queueList->GetSelection() - 1);
+}
+
+void MainFrame::OnClickQueueDown(wxCommandEvent& event) {
+    MoveQueue(queueList->GetSelection(), queueList->GetSelection() + 1);
+}
+
+void MainFrame::OnClickQueueBottom(wxCommandEvent& event) {
+    MoveQueue(queueList->GetSelection(), fst_gui->blockQueue.queueLength() - 1);
 }
 
 void MainFrame::OnClickAddQueue(wxCommandEvent& event) {
@@ -757,6 +780,8 @@ bool MainFrame::PasteFromClipboard() {
 
                 addBlockOnRun = (addedBlocks == 1);
                 removeBlockOnCancel = (addedBlocks == 1);
+
+                fst_gui->saveSave();
             }
         }
 
@@ -988,7 +1013,8 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     mainVBox->Add(-1, (int)std::round(scaleFactor * 10));
 
     wxBoxSizer* outputHBox = new wxBoxSizer(wxHORIZONTAL);
-    outputBox = new wxTextCtrl(panel, wxID_ANY, wxT(""), wxPoint(-1, -1), wxSize(-1, -1), wxTE_MULTILINE | wxTE_READONLY);
+    std::string outputBoxDefaultText = "BitFS Final Speed Transfer Brute Forcer Launch App " + fst_gui->version + "\n";
+    outputBox = new wxTextCtrl(panel, wxID_ANY, outputBoxDefaultText, wxPoint(-1, -1), wxSize(-1, -1), wxTE_MULTILINE | wxTE_READONLY);
 
     outputHBox->Add(outputBox, 1, wxEXPAND);
     mainVBox->Add(outputHBox, 1, wxLEFT | wxRIGHT | wxEXPAND, (int)std::round(scaleFactor * 10));
@@ -1049,6 +1075,29 @@ MainFrame::MainFrame(const wxString& title, FST_GUI* f)
     Connect(ID_CLEAR_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickClearQueue));
 
     queueHBox->Add(queueVBox, 0);
+
+    wxBoxSizer* queueSortVBox = new wxBoxSizer(wxVERTICAL);
+    topQueueButton = new wxButton(queuePanel, ID_TOP_QUEUE_BUTTON, wxT("⭱"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    queueSortVBox->Add(topQueueButton, 0, wxLEFT | wxTOP | wxBOTTOM, (int)std::round(scaleFactor * 7));
+    upQueueButton = new wxButton(queuePanel, ID_UP_QUEUE_BUTTON, wxT("↑"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    queueSortVBox->Add(upQueueButton, 0, wxLEFT | wxTOP | wxBOTTOM, (int)std::round(scaleFactor * 7));
+    downQueueButton = new wxButton(queuePanel, ID_DOWN_QUEUE_BUTTON, wxT("↓"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    queueSortVBox->Add(downQueueButton, 0, wxLEFT | wxTOP | wxBOTTOM, (int)std::round(scaleFactor * 7));
+    bottomQueueButton = new wxButton(queuePanel, ID_BOTTOM_QUEUE_BUTTON, wxT("⭳"), wxDefaultPosition, wxDefaultSize, wxBU_EXACTFIT);
+    queueSortVBox->Add(bottomQueueButton, 0, wxLEFT | wxTOP | wxBOTTOM, (int)std::round(scaleFactor * 7));
+    wxFont sortButtonFont = topQueueButton->GetFont();
+    sortButtonFont.Scale(1.75);
+    topQueueButton->SetFont(sortButtonFont);
+    upQueueButton->SetFont(sortButtonFont);
+    downQueueButton->SetFont(sortButtonFont);
+    bottomQueueButton->SetFont(sortButtonFont);
+
+    Connect(ID_TOP_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickQueueTop));
+    Connect(ID_UP_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickQueueUp));
+    Connect(ID_DOWN_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickQueueDown));
+    Connect(ID_BOTTOM_QUEUE_BUTTON, wxEVT_BUTTON, wxCommandEventHandler(MainFrame::OnClickQueueBottom));
+
+    queueHBox->Add(queueSortVBox, 0, wxALIGN_CENTER);
     
     queuePanel->SetSizerAndFit(queueHBox);
     queuePanel->SetSize(queuePanelSize);

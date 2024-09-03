@@ -73,11 +73,41 @@ void BlockQueue::getQueueStrings(wxArrayString& queueStrings, bool running) {
 
     int idx = running ? 0 : 1;
 
-    for (BlockData block : this->queue) {
+    for (const BlockData& block : this->queue) {
         std::string s = (idx == 0 ? "Running" : std::to_string(idx)) + ") X = [" + float2string(block.xMin, string_float_precision) + " " + float2string(block.xMax, string_float_precision) + "], Y = [" + float2string(block.yMin, string_float_precision) + " " + float2string(block.yMax, string_float_precision) + "], " + (block.zModeOption == 1 ? "Z" : "XZ") + " = [" + float2string(block.zMin, string_float_precision) + " " + float2string(block.zMax, string_float_precision) + "], Platform = (" + (block.platformOption == 0 ? "-1945" : "-2866") + ", -3225, -715), Size = " + std::to_string(block.xSamples) + "x" + std::to_string(block.ySamples) + "x" + std::to_string(block.zSamples);
         queueStrings.push_back(s);
         idx++;
     }
+}
+
+bool BlockQueue::moveElement(int source, int target) {
+    if (source >= 0 && source < this->queue.size() && target >= 0 && target < this->queue.size() && source != target) {
+        std::list<BlockData>::iterator iter = this->queue.begin();
+        std::list<BlockData>::iterator sIter;
+        std::list<BlockData>::iterator tIter;
+
+        for (int i = 0; i <= source || i <= target; i++) {
+            if (i == source) {
+                sIter = iter;
+            }
+
+            if (i == target) {
+                tIter = iter;
+            }
+
+            iter++;
+        }
+
+        if (source < target) {
+            tIter++;
+        }
+
+        this->queue.splice(tIter, this->queue, sIter);
+
+        return true;
+    }
+
+    return false;
 }
 
 bool compareBlocks(BlockData* s1, BlockData* s2) {

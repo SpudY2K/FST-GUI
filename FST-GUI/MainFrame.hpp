@@ -40,7 +40,11 @@ enum MainFrameIDs {
     ID_REMOVE_QUEUE_BUTTON = 1020,
     ID_CLEAR_QUEUE_BUTTON = 1021,
     ID_IMPORT_QUEUE_BUTTON = 1022,
-    ID_CTRL_V = 1023
+    ID_CTRL_V = 1023,
+    ID_TOP_QUEUE_BUTTON = 1024,
+    ID_UP_QUEUE_BUTTON = 1025,
+    ID_DOWN_QUEUE_BUTTON = 1026,
+    ID_BOTTOM_QUEUE_BUTTON = 1027
 };
 
 class FST_GUI;
@@ -61,6 +65,10 @@ public:
     void OnClickRemoveQueue(wxCommandEvent& event);
     void OnClickClearQueue(wxCommandEvent& event);
     void OnClickImportQueue(wxCommandEvent& event);
+    void OnClickQueueTop(wxCommandEvent& event);
+    void OnClickQueueUp(wxCommandEvent& event);
+    void OnClickQueueDown(wxCommandEvent& event);
+    void OnClickQueueBottom(wxCommandEvent& event);
     void OnThreadCompletion(wxThreadEvent& event);
     void OnThreadUpdate(wxThreadEvent& event);
     void OnClose(wxCloseEvent& event);
@@ -71,6 +79,7 @@ public:
     void UpdateQueueList(int selectedIdx);
     void UpdateQueueList();
     bool PasteFromClipboard();
+    void MoveQueue(int source, int target);
 
     bool addBlockOnRun = true;
     bool removeBlockOnCancel = false;
@@ -141,4 +150,9 @@ private:
     wxButton* removeQueueButton;
     wxButton* clearQueueButton;
     wxButton* importQueueButton;
+
+    wxButton* topQueueButton;
+    wxButton* upQueueButton;
+    wxButton* downQueueButton;
+    wxButton* bottomQueueButton;
 };

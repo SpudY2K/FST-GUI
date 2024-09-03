@@ -96,6 +96,7 @@ public:
     BlockData getNextBlockInQueue();
     void getQueueStrings(wxArrayString& queueStrings, bool running);
     void clearQueue(bool removeFirst);
+    bool moveElement(int source, int target);
 
 private:
     std::list<BlockData> queue;
@@ -107,6 +108,7 @@ bool compareBlocks(BlockData* s1, BlockData* s2);
 class FST_GUI : public wxApp
 {
 public:
+    std::string version = "v1.0";
     SaveData saveStruct;
     BlockQueue blockQueue;
 
@@ -115,6 +117,8 @@ public:
 
     const std::vector<DeviceInfo>& deviceList();
     std::filesystem::path executablePath();
+
+    wxIcon icon;
 
     FST_GUI();
     virtual ~FST_GUI();

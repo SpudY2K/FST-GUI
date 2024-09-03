@@ -7,6 +7,8 @@
 #include "SYCLQuery/SYCLQuery.hpp"
 #include "CUDAQuery/CUDAQuery.hpp"
 
+#include "FSTLogo.xpm"
+
 FST_GUI::FST_GUI() : blockQueue(this)
 {
     loadSave();
@@ -175,6 +177,8 @@ void FST_GUI::saveSave() {
 
 bool FST_GUI::OnInit()
 {
+    icon = wxIcon(FSTLogo_xpm);
+
     if (is_cuda_available()) {
         get_cuda_devices(this->cudaDeviceList);
     }
@@ -190,6 +194,7 @@ bool FST_GUI::OnInit()
     checkExecutable();
 
 	mainFrame = new MainFrame(L"BitFS Final Speed Transfer Brute Forcer Launch App", this);
+    mainFrame->SetIcon(icon);
 	mainFrame->Show(true);
 	return true;
 }
@@ -235,17 +240,19 @@ bool FST_GUI::askGPUMode() {
     if (saveStruct.gpuModeSelected == MODE_NONE) {
             wxArrayString libCoices = { wxT("CUDA (nVidia GPUs)"), wxT("SYCL (AMD or Intel GPUs/CPUs") };
 
-            wxSingleChoiceDialog findExeDialog = wxSingleChoiceDialog(NULL, "Select your default compute library.\n\nThis can be changed later by going to \"GPU Settings\".", "Select Compute Library", libCoices, NULL, wxCANCEL | wxOK | wxCENTRE);
-            int result = findExeDialog.ShowModal();
+            wxSingleChoiceDialog gpuChoiceDialog = wxSingleChoiceDialog(NULL, "Select your default compute library.\n\nThis can be changed later by going to \"GPU Settings\".", "Select Compute Library", libCoices, NULL, wxCANCEL | wxOK | wxCENTRE);
+
+            gpuChoiceDialog.SetIcon(icon);
+            int result = gpuChoiceDialog.ShowModal();
 
             if (result == wxID_CANCEL) {
                 return false;
             }
 
-            if (findExeDialog.GetSelection() == 0) {
+            if (gpuChoiceDialog.GetSelection() == 0) {
                 saveStruct.gpuModeSelected = MODE_CUDA;
             }
-            else if (findExeDialog.GetSelection() == 1) {
+            else if (gpuChoiceDialog.GetSelection() == 1) {
                 saveStruct.gpuModeSelected = MODE_SYCL;
 
             }
@@ -266,6 +273,7 @@ bool FST_GUI::askGPUMode() {
 bool FST_GUI::checkExecutable() {
     if (!std::filesystem::exists(executablePath())) {
         wxMessageDialog findExeDialog = wxMessageDialog(NULL, "Cannot find FST Brute Forcer executable.\n\nPlease provide a path to the executable file.", "Error", wxCANCEL | wxOK | wxCENTRE);
+        findExeDialog.SetIcon(icon);
         int result = findExeDialog.ShowModal();
 
         if (result == wxID_CANCEL) {
