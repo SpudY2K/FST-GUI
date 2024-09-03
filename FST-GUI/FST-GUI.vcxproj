@@ -154,6 +154,7 @@
     <ClInclude Include="GPUFrame.hpp" />
     <ClInclude Include="Logging.hpp" />
     <ClInclude Include="MainFrame.hpp" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="RunThread.hpp" />
     <ClInclude Include="subprocess.h" />
     <ClInclude Include="utils.hpp" />
@@ -165,6 +166,15 @@
     <ProjectReference Include="..\SYCLQuery\SYCLQuery.vcxproj">
       <Project>{db43adc4-ab7b-4ed5-a8c6-9d0695745921}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FSTLogo.xpm" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FST-GUI.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="FSTLogo.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

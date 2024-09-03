@@ -1,0 +1,3 @@
+#include "resource.h"
+
+FST_LOGO               ICON                    "FSTLogo.ico"
