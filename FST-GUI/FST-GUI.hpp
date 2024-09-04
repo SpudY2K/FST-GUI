@@ -88,6 +88,7 @@ public:
     BlockQueue(FST_GUI* f);
 
     std::list<BlockData>::iterator queueBegin();
+    bool findBlock(BlockData* refBlock, BlockData*& matchedBlock);
     bool queueEmpty();
     int queueLength();
     bool addBlockToQueue(BlockData newBlock);

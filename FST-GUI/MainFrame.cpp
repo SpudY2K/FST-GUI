@@ -355,6 +355,26 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
         }
 
         if (blockStatus == 0x1FF || blockStatus == 0x177 && samplesSearched > 0 && !searchComplete) {
+            /*
+            BlockData* matchedBlock = nullptr;
+
+            bool replaceBlock = fst_gui->blockQueue.findBlock(&blockData, matchedBlock);
+
+            if (replaceBlock) {
+                matchedBlock->zMin = lastSampleSearched;
+                matchedBlock->zSamples = matchedBlock->zSamples - samplesSearched + 1;
+                addedBlocks++;
+            }
+            else {
+                blockData.zMin = lastSampleSearched;
+                blockData.zSamples = blockData.zSamples - samplesSearched + 1;
+
+                if (fst_gui->blockQueue.addBlockToQueue(blockData)) {
+                    addedBlocks++;
+                }
+            }
+            */
+
             blockData.zMin = lastSampleSearched;
             blockData.zSamples = blockData.zSamples - samplesSearched + 1;
 

@@ -5,11 +5,22 @@ BlockQueue::BlockQueue(FST_GUI* f) {
     fst_gui = f;
 }
 
+bool BlockQueue::findBlock(BlockData* refBlock, BlockData*& matchedBlock) {
+    for (std::list<BlockData>::iterator iter = this->queue.begin(); iter != this->queue.end(); iter++) {
+        if (compareBlocks(refBlock, &(*iter))) {
+            matchedBlock = &(*iter);
+            return true;
+        }
+    }
+
+    return false;
+}
+
 bool BlockQueue::addBlockToQueue(BlockData newBlock) {
     bool uniqueBlock = true;
 
-    for (BlockData block : this->queue) {
-        if (compareBlocks(&newBlock, &block)) {
+    for (std::list<BlockData>::iterator iter = this->queue.begin(); iter != this->queue.end(); iter++) {
+        if (compareBlocks(&newBlock, &(*iter))) {
             uniqueBlock = false;
             break;
         }
