@@ -125,13 +125,15 @@ public:
     virtual ~FST_GUI();
     virtual bool OnInit() override;
 
-    void loadToBlockStruct(std::ifstream& fs, BlockData* save);
+    bool readCheckpoint(BlockData* checkpointBlock, std::filesystem::path checkpointPath);
+    bool loadToBlockStruct(std::ifstream& fs, BlockData* save);
     void loadSave();
     void saveFromBlockStruct(std::ofstream& fs, BlockData* save);
     void saveSave();
     bool updateExecutableFile();
     bool checkExecutable();
     bool askGPUMode();
+
     int FilterEvent(wxEvent& event) override;
 
 private:

@@ -19,18 +19,89 @@ FST_GUI::~FST_GUI()
     saveSave();
 }
 
-void FST_GUI::loadToBlockStruct(std::ifstream& fs, BlockData* save) {
+bool FST_GUI::readCheckpoint(BlockData* checkpointBlock, std::filesystem::path checkpointPath) {
+    const int skipBytes = 28;
+
+    std::ifstream fs(checkpointPath, std::ios::out | std::ios::binary);
+
+    if (!fs.is_open()) return false;
+    fs.seekg(skipBytes);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->xMin), sizeof checkpointBlock->xMin);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->xMax), sizeof checkpointBlock->xMax);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->yMin), sizeof checkpointBlock->yMin);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->yMax), sizeof checkpointBlock->yMax);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->zMin), sizeof checkpointBlock->zMin);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->zMax), sizeof checkpointBlock->zMax);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->xSamples), sizeof checkpointBlock->xSamples);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->ySamples), sizeof checkpointBlock->ySamples);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->zSamples), sizeof checkpointBlock->zSamples);
+    if (!fs.good()) return false;
+    fs.read((char*)(&checkpointBlock->zModeOption), sizeof(bool));
+    if (!fs.good()) return false;
+
+    bool quadMode;
+    fs.read((char*)(&quadMode), sizeof quadMode);
+    if (!fs.good()) return false;
+    if (quadMode) return false;
+
+    float platformX;
+    fs.read((char*)(&platformX), sizeof platformX);
+    if (!fs.good()) return false;
+    if (platformX == -1945.0f) {
+        checkpointBlock->platformOption = 0;
+    } else if (platformX == -2866.0f) {
+        checkpointBlock->platformOption = 1;
+    } else {
+        return false;
+    }
+
+    float platformY;
+    fs.read((char*)(&platformY), sizeof platformY);
+    if (!fs.good()) return false;
+    if (platformY != -3225.0f) return false;
+
+    float platformZ;
+    fs.read((char*)(&platformZ), sizeof platformZ);
+    if (!fs.good()) return false;
+    if (platformZ != -715.0f) return false;
+
+    return true;
+}
+
+bool FST_GUI::loadToBlockStruct(std::ifstream& fs, BlockData* save) {
     fs.read((char*)(&save->platformOption), sizeof save->platformOption);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->zModeOption), sizeof save->zModeOption);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->xMin), sizeof save->xMin);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->xMax), sizeof save->xMax);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->yMin), sizeof save->yMin);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->yMax), sizeof save->yMax);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->zMin), sizeof save->zMin);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->zMax), sizeof save->zMax);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->xSamples), sizeof save->xSamples);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->ySamples), sizeof save->ySamples);
+    if (!fs.good()) return false;
     fs.read((char*)(&save->zSamples), sizeof save->zSamples);
+    if (!fs.good()) return false;
+
+    return true;
 }
 
 void FST_GUI::loadSave() {
@@ -38,67 +109,106 @@ void FST_GUI::loadSave() {
         saveSave();
     }
     else {
-        std::ifstream fs(this->saveFile, std::ios::out | std::ios::binary);
+        std::ifstream fs(this->saveFile, std::ios::in | std::ios::binary);
 
-        if (fs) {
+        if (fs.is_open()) {
             int saveVersion;
             fs.read((char*)(&saveVersion), sizeof saveVersion);
 
-            if (saveVersion == this->saveStruct.version) {
-                loadToBlockStruct(fs, &this->saveStruct.blockData);
+            bool readOK = saveVersion == this->saveStruct.version;
+
+            if (readOK) {
+                readOK &= loadToBlockStruct(fs, &this->saveStruct.blockData);
 
                 int outStringSize;
                 fs.read((char*)(&outStringSize), sizeof outStringSize);
+                readOK &= fs.good();
                 std::string outputDirectoryStr = "";
                 outputDirectoryStr.resize(outStringSize);
                 fs.read((char*)(outputDirectoryStr.c_str()), outStringSize);
+                readOK &= fs.good();
                 this->saveStruct.outputDirectory = std::filesystem::path(outputDirectoryStr);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.gpuDeviceID), sizeof this->saveStruct.gpuDeviceID);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.maxThreads), sizeof this->saveStruct.maxThreads);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_PLAT_SOLUTIONS), sizeof this->saveStruct.MAX_PLAT_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_ONE), sizeof this->saveStruct.MAX_UPWARP_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_A), sizeof this->saveStruct.MAX_SK_PHASE_TWO_A);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_B), sizeof this->saveStruct.MAX_SK_PHASE_TWO_B);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_C), sizeof this->saveStruct.MAX_SK_PHASE_TWO_C);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_TWO_D), sizeof this->saveStruct.MAX_SK_PHASE_TWO_D);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_THREE), sizeof this->saveStruct.MAX_SK_PHASE_THREE);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_FOUR), sizeof this->saveStruct.MAX_SK_PHASE_FOUR);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_FIVE), sizeof this->saveStruct.MAX_SK_PHASE_FIVE);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_PHASE_SIX), sizeof this->saveStruct.MAX_SK_PHASE_SIX);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SK_UPWARP_SOLUTIONS), sizeof this->saveStruct.MAX_SK_UPWARP_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SPEED_SOLUTIONS), sizeof this->saveStruct.MAX_SPEED_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_10K_SOLUTIONS), sizeof this->saveStruct.MAX_10K_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SLIDE_SOLUTIONS), sizeof this->saveStruct.MAX_SLIDE_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_BD_SOLUTIONS), sizeof this->saveStruct.MAX_BD_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS), sizeof this->saveStruct.MAX_DOUBLE_10K_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS), sizeof this->saveStruct.MAX_BULLY_PUSH_SOLUTIONS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_SQUISH_SPOTS), sizeof this->saveStruct.MAX_SQUISH_SPOTS);
+                readOK &= fs.good();
                 fs.read((char*)(&this->saveStruct.MAX_STRAIN_SETUPS), sizeof this->saveStruct.MAX_STRAIN_SETUPS);
+                readOK &= fs.good();
                 fs.read((char*)(&outStringSize), sizeof outStringSize);
+                readOK &= fs.good();
                 std::string cudaExecutablePathStr = "";
                 cudaExecutablePathStr.resize(outStringSize);
                 fs.read((char*)(cudaExecutablePathStr.c_str()), outStringSize);
+                readOK &= fs.good();
                 this->saveStruct.cudaExecutablePath = std::filesystem::path(cudaExecutablePathStr);
                 fs.read((char*)(&outStringSize), sizeof outStringSize);
+                readOK &= fs.good();
                 std::string syclExecutablePathStr = "";
                 syclExecutablePathStr.resize(outStringSize);
                 fs.read((char*)(syclExecutablePathStr.c_str()), outStringSize);
+                readOK &= fs.good();
                 this->saveStruct.syclExecutablePath = std::filesystem::path(syclExecutablePathStr);
                 fs.read((char*)(&this->saveStruct.gpuModeSelected), sizeof this->saveStruct.gpuModeSelected);
+                readOK &= fs.good();
 
                 int queueLength;
                 fs.read((char*)(&queueLength), sizeof queueLength);
+                readOK &= fs.good();
 
-                for (int i = 0; i < queueLength; i++) {
+                for (int i = 0; i < queueLength && readOK; i++) {
                     BlockData queueBlock;
-                    loadToBlockStruct(fs, &queueBlock);
+                    readOK &= loadToBlockStruct(fs, &queueBlock);
                     this->blockQueue.addBlockToQueue(queueBlock);
                 }
             }
-        }
 
-        fs.close();
+            fs.close();
+
+            if (!readOK) {
+                this->saveStruct = SaveData();
+                this->blockQueue.clearQueue(true);
+                saveSave();
+            }
+        }
     }
 }
 
@@ -119,7 +229,7 @@ void FST_GUI::saveFromBlockStruct(std::ofstream& fs, BlockData* save) {
 void FST_GUI::saveSave() {
     std::ofstream fs(this->saveFile, std::ios::out | std::ios::binary);
 
-    if (fs) {
+    if (fs.is_open()) {
         fs.write((char*)(&this->saveStruct.version), sizeof this->saveStruct.version);
 
         saveFromBlockStruct(fs, &this->saveStruct.blockData);
@@ -170,9 +280,9 @@ void FST_GUI::saveSave() {
 
             iter++;
         }
-    }
 
-    fs.close();
+        fs.close();
+    }
 }
 
 bool FST_GUI::OnInit()

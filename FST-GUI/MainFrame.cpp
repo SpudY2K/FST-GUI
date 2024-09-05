@@ -70,27 +70,74 @@ void MainFrame::OnThreadUpdate(wxThreadEvent& event)
 }
 
 void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args) {
+    const std::string outFileExt = ".csv";
+    const std::string logFileExt = ".log";
+    const std::string checkpointFileExt = ".ckpt";
+
     const int filename_float_precision = 6;
 
-    std::string outFileName = "fstSearch_" + float2string(blockParams->xMin, filename_float_precision) + "_" + float2string(blockParams->xMax, filename_float_precision) + "_"
+    std::string baseFileName = "fstSearch_" + float2string(blockParams->xMin, filename_float_precision) + "_" + float2string(blockParams->xMax, filename_float_precision) + "_"
         + float2string(blockParams->yMin, filename_float_precision) + "_" + float2string(blockParams->yMax, filename_float_precision) + "_" + float2string(blockParams->zMin, filename_float_precision)
-        + "_" + float2string(blockParams->zMax, filename_float_precision) + "_" + std::to_string(blockParams->xSamples) + "_" + std::to_string(blockParams->ySamples) + "_" + std::to_string(blockParams->zSamples) + "_" + platformX->GetString(blockParams->platformOption).ToStdString() + ".csv";
+        + "_" + float2string(blockParams->zMax, filename_float_precision) + "_" + std::to_string(blockParams->xSamples) + "_" + std::to_string(blockParams->ySamples) + "_" + std::to_string(blockParams->zSamples) + "_" + platformX->GetString(blockParams->platformOption).ToStdString();
+
+    std::filesystem::path checkpointFilePath;
+
+    std::filesystem::directory_iterator end;
+    std::filesystem::directory_iterator iter(fst_gui->saveStruct.outputDirectory);
+
+    while (iter != end) {
+        std::filesystem::directory_entry entry = *iter;
+        iter++;
+
+        if (entry.path().extension() == checkpointFileExt && entry.path().filename().string().starts_with(baseFileName)) {
+            BlockData checkpointBlock;
+
+            if (fst_gui->readCheckpoint(&checkpointBlock, entry.path())) {
+                if (compareBlocks(&checkpointBlock, blockParams)) {
+                    std::filesystem::file_time_type t = entry.last_write_time();
+                    
+                    wxMessageDialog checkpointFoundDialog = wxMessageDialog(this, std::format("A matching checkpoint has been found for this search block.\n\nCheckpoint dated: {:%c}.\n\nWould you like to resume from this checkpoint?", entry.last_write_time()), "Checkpoint Found", wxYES | wxNO | wxCENTRE);
+                    int result = checkpointFoundDialog.ShowModal();
+
+                    if (result == wxID_YES) {
+                        checkpointFilePath = entry.path();
+                        break;
+                    }
+                    else if (result == wxID_NO) {
+                        wxMessageDialog deleteCheckpointDialog = wxMessageDialog(this, "Checkpoint rejected.\n\nWould you like to delete this checkpoint file?", "Delete Checkpoint?", wxYES | wxNO | wxCENTRE);
+                        result = deleteCheckpointDialog.ShowModal();
+
+                        if (result == wxID_YES) {
+                            std::filesystem::remove(entry.path());
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     std::filesystem::path outFilePath = fst_gui->saveStruct.outputDirectory;
-    outFilePath.append(outFileName);
+    outFilePath.append(baseFileName+outFileExt);
 
     int i = 0;
 
     while (std::filesystem::exists(outFilePath)) {
-        std::string newOutFileName = outFileName.substr(0, outFileName.size() - 4) + "_" + std::to_string(i) + ".csv";
+        std::string newOutFileName = baseFileName + "_" + std::to_string(i) + outFileExt;
         outFilePath = fst_gui->saveStruct.outputDirectory;
         outFilePath.append(newOutFileName);
         i++;
     }
 
     std::filesystem::path logFilePath = outFilePath;
-    logFilePath.replace_extension(".log");
+    logFilePath.replace_extension(logFileExt);
 
+    if (checkpointFilePath.empty()) {
+        checkpointFilePath = outFilePath;
+        checkpointFilePath.replace_extension(checkpointFileExt);
+    }
+
+    args.emplace_back("-c");
+    args.emplace_back(checkpointFilePath.string());
     args.emplace_back("-nx");
     args.emplace_back(float2string(blockParams->xMin, float_precision));
     args.emplace_back(float2string(blockParams->xMax, float_precision));
@@ -148,6 +195,8 @@ void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args
     args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SPEED_SOLUTIONS));
     args.emplace_back("-l10k");
     args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_10K_SOLUTIONS));
+    args.emplace_back("-lsl");
+    args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_SLIDE_SOLUTIONS));
     args.emplace_back("-lbd");
     args.emplace_back(std::to_string(fst_gui->saveStruct.MAX_BD_SOLUTIONS));
     args.emplace_back("-ld10k");
@@ -301,8 +350,8 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
     std::ifstream logFile(logFilePath);
 
     if (!logFile.is_open()) {
-        wxMessageDialog createFolderDialog = wxMessageDialog(this, "Could not open the chosen log file.", "Error", wxOK | wxCENTRE);
-        createFolderDialog.ShowModal();
+        wxMessageDialog logOpenFailDialog = wxMessageDialog(this, "Could not open the chosen log file.", "Error", wxOK | wxCENTRE);
+        logOpenFailDialog.ShowModal();
     }
     else {
         int addedBlocks = 0;
@@ -323,7 +372,7 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
             if (CheckLogLine(line, time, l)) {
                 if (l == LOG_WARNING) {
                     if (GetNormalFromLogLine(line, normal, position)) {
-                        if ((position[0] == -1945 || position[0] == -2866) && position[1] == -3225 && position[2] == -715) {
+                        if ((position[0] == -1945.0f || position[0] == -2866.0f) && position[1] == -3225.0f && position[2] == -715.0f) {
                             BlockData newBlock;
 
                             newBlock.xMin = normal[0];
@@ -337,7 +386,7 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
                             newBlock.zSamples = 1;
 
                             newBlock.zModeOption = 1;
-                            newBlock.platformOption = (position[0] == -1945 ? 0 : 1);
+                            newBlock.platformOption = (position[0] == -1945.0f ? 0 : 1);
 
                             if (fst_gui->blockQueue.addBlockToQueue(newBlock)) {
                                 addedBlocks++;
@@ -384,8 +433,8 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
         }
 
         if (addedBlocks == 0) {
-            wxMessageDialog createFolderDialog = wxMessageDialog(this, "Could not find any new normal blocks in log file.", "Error", wxOK | wxCENTRE);
-            createFolderDialog.ShowModal();
+            wxMessageDialog logImportDialog = wxMessageDialog(this, "Could not find any new normal blocks in log file.", "Error", wxOK | wxCENTRE);
+            logImportDialog.ShowModal();
         }
         else {
             UpdateQueueList(fst_gui->blockQueue.queueLength() - 1);
@@ -394,8 +443,8 @@ void MainFrame::OnClickImportQueue(wxCommandEvent& event) {
             removeBlockOnCancel = false;
 
             std::string outText = "Imported " + std::to_string(addedBlocks) + " normal block" + (addedBlocks > 1 ? "s" : "") + " from log file.";
-            wxMessageDialog createFolderDialog = wxMessageDialog(this, outText, "Import Successful", wxOK | wxCENTRE);
-            createFolderDialog.ShowModal();
+            wxMessageDialog logImportDialog = wxMessageDialog(this, outText, "Import Successful", wxOK | wxCENTRE);
+            logImportDialog.ShowModal();
         }
     }
 }
@@ -731,13 +780,13 @@ bool MainFrame::PasteFromClipboard() {
                             iter++;
                         }
 
-                        if (platY == -3225 && platZ == -715) {
+                        if (platY == -3225.0f && platZ == -715.0f) {
                             int platformIdx = -1;
 
-                            if (platX == -1945) {
+                            if (platX == -1945.0f) {
                                 platformIdx = 0;
                             }
-                            else if (platX == -2866) {
+                            else if (platX == -2866.0f) {
                                 platformIdx = 1;
                             }
 
