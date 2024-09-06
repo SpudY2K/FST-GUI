@@ -5,6 +5,7 @@
 #include <wx/clipbrd.h>
 #include <wx/valnum.h>
 #include <wx/statline.h>
+#include <chrono>
 #include <filesystem>
 #include <sstream>
 #include <fstream>
@@ -78,7 +79,7 @@ void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args
 
     std::string baseFileName = "fstSearch_" + float2string(blockParams->xMin, filename_float_precision) + "_" + float2string(blockParams->xMax, filename_float_precision) + "_"
         + float2string(blockParams->yMin, filename_float_precision) + "_" + float2string(blockParams->yMax, filename_float_precision) + "_" + float2string(blockParams->zMin, filename_float_precision)
-        + "_" + float2string(blockParams->zMax, filename_float_precision) + "_" + std::to_string(blockParams->xSamples) + "_" + std::to_string(blockParams->ySamples) + "_" + std::to_string(blockParams->zSamples) + "_" + platformX->GetString(blockParams->platformOption).ToStdString();
+        + "_" + float2string(blockParams->zMax, filename_float_precision) + "_" + std::to_string(blockParams->xSamples) + "_" + std::to_string(blockParams->ySamples) + "_" + std::to_string(blockParams->zSamples) + "_" + platformX->GetString(blockParams->platformOption).ToStdString() + "_" + (blockParams->zModeOption == 1 ? "Z" : "XZ");
 
     std::filesystem::path checkpointFilePath;
 
@@ -94,9 +95,15 @@ void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args
 
             if (fst_gui->readCheckpoint(&checkpointBlock, entry.path())) {
                 if (compareBlocks(&checkpointBlock, blockParams)) {
-                    std::filesystem::file_time_type t = entry.last_write_time();
-                    
-                    wxMessageDialog checkpointFoundDialog = wxMessageDialog(this, std::format("A matching checkpoint has been found for this search block.\n\nCheckpoint dated: {:%c}.\n\nWould you like to resume from this checkpoint?", entry.last_write_time()), "Checkpoint Found", wxYES | wxNO | wxCENTRE);
+                    std::filesystem::file_time_type lastModified = entry.last_write_time();
+                    std::chrono::system_clock::time_point lastModifiedSystem = std::chrono::clock_cast<std::chrono::system_clock>(lastModified);
+                    std::time_t lastModifiedTime = std::chrono::system_clock::to_time_t(lastModifiedSystem);
+                    std::tm lastModifiedTM = *std::localtime(&lastModifiedTime);
+
+                    std::stringstream ss;
+                    ss << std::put_time(&lastModifiedTM, "%c");
+
+                    wxMessageDialog checkpointFoundDialog = wxMessageDialog(this, "A matching checkpoint has been found for this search block.\n\nCheckpoint dated: " + ss.str() + ".\n\nWould you like to resume from this checkpoint?", "Checkpoint Found", wxYES | wxNO | wxCENTRE);
                     int result = checkpointFoundDialog.ShowModal();
 
                     if (result == wxID_YES) {
@@ -658,12 +665,8 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
     case ID_NORM_SAMPLES_X:
         try {
             fst_gui->saveStruct.blockData.xSamples = std::stoi(s);
-            if (fst_gui->saveStruct.blockData.xSamples == 1 && fst_gui->saveStruct.blockData.xMax != fst_gui->saveStruct.blockData.xMin) {
-                fst_gui->saveStruct.blockData.xMax = fst_gui->saveStruct.blockData.xMin;
-                maxBoxX->ChangeValue(float2string(fst_gui->saveStruct.blockData.xMax, float_precision));
-            }
 
-            float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
+            float xGap = (fst_gui->saveStruct.blockData.xMax == fst_gui->saveStruct.blockData.xMin || fst_gui->saveStruct.blockData.xSamples == 1) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.xMax - fst_gui->saveStruct.blockData.xMin) / (float)(fst_gui->saveStruct.blockData.xSamples - 1);
             gapsX->ChangeValue(float2string(xGap, float_precision));
 
             addBlockOnRun = true;
@@ -674,12 +677,8 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
     case ID_NORM_SAMPLES_Y:
         try {
             fst_gui->saveStruct.blockData.ySamples = std::stoi(s);
-            if (fst_gui->saveStruct.blockData.ySamples == 1 && fst_gui->saveStruct.blockData.yMax != fst_gui->saveStruct.blockData.yMin) {
-                fst_gui->saveStruct.blockData.yMax = fst_gui->saveStruct.blockData.yMin;
-                maxBoxY->ChangeValue(float2string(fst_gui->saveStruct.blockData.yMax, float_precision));
-            }
 
-            float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
+            float yGap = (fst_gui->saveStruct.blockData.yMax == fst_gui->saveStruct.blockData.yMin || fst_gui->saveStruct.blockData.ySamples == 1) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.yMax - fst_gui->saveStruct.blockData.yMin) / (float)(fst_gui->saveStruct.blockData.ySamples - 1);
             gapsY->ChangeValue(float2string(yGap, float_precision));
 
             addBlockOnRun = true;
@@ -690,12 +689,8 @@ void MainFrame::OnTextChange(wxCommandEvent& event) {
     case ID_NORM_SAMPLES_Z:
         try {
             fst_gui->saveStruct.blockData.zSamples = std::stoi(s);
-            if (fst_gui->saveStruct.blockData.zSamples == 1 && fst_gui->saveStruct.blockData.zMax != fst_gui->saveStruct.blockData.zMin) {
-                fst_gui->saveStruct.blockData.zMax = fst_gui->saveStruct.blockData.zMin;
-                maxBoxZ->ChangeValue(float2string(fst_gui->saveStruct.blockData.zMax, float_precision));
-            }
 
-            float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
+            float zGap = (fst_gui->saveStruct.blockData.zMax == fst_gui->saveStruct.blockData.zMin || fst_gui->saveStruct.blockData.zSamples == 1) ? 0.0 : fabsf(fst_gui->saveStruct.blockData.zMax - fst_gui->saveStruct.blockData.zMin) / (float)(fst_gui->saveStruct.blockData.zSamples - 1);
             gapsZ->ChangeValue(float2string(zGap, float_precision));
 
             addBlockOnRun = true;

@@ -20,7 +20,7 @@ FST_GUI::~FST_GUI()
 }
 
 bool FST_GUI::readCheckpoint(BlockData* checkpointBlock, std::filesystem::path checkpointPath) {
-    const int skipBytes = 28;
+    const int skipBytes = 32;
 
     std::ifstream fs(checkpointPath, std::ios::out | std::ios::binary);
 
