@@ -104,7 +104,7 @@ void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args
                     std::stringstream ss;
                     ss << std::put_time(&lastModifiedTM, "%c");
 
-                    wxMessageDialog checkpointFoundDialog = wxMessageDialog(this, "A matching checkpoint has been found for this search block.\n\nCheckpoint Dated: " + ss.str() + ".\n\nWould you like to resume from this checkpoint ? ", "Checkpoint Found", wxYES | wxNO | wxCENTRE);
+                    wxMessageDialog checkpointFoundDialog = wxMessageDialog(this, "A matching checkpoint has been found for this search block.\n\nCheckpoint Dated: " + ss.str() + ".\n\nWould you like to resume from this checkpoint?", "Checkpoint Found", wxYES | wxNO | wxCENTRE);
                     int result = checkpointFoundDialog.ShowModal();
 
                     if (result == wxID_YES) {
