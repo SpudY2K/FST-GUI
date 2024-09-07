@@ -21,6 +21,7 @@ add_executable(FST-GUI
   "subprocess.h"
   "utils.cpp"
   "utils.hpp"
+  "Validator.hpp"
 )
 
 set(CMAKE_C_COMPILER "/opt/intel/oneapi/2024.2/bin/icx")

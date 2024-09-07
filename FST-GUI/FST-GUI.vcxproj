@@ -158,6 +158,7 @@
     <ClInclude Include="RunThread.hpp" />
     <ClInclude Include="subprocess.h" />
     <ClInclude Include="utils.hpp" />
+    <ClInclude Include="Validator.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\CUDAQuery\CUDAQuery.vcxproj">

@@ -9,6 +9,82 @@
 
 #include "FSTLogo.xpm"
 
+#include <wx/numformatter.h>
+#include "Validator.hpp"
+
+#include "utils.hpp"
+
+//I don't really want to put this here, but I can't get things to build if I move it to a more sensible place
+wxString wxFlexFloatingPointValidatorBase::ToString(LongestValueType value) const
+{
+    int precision = getMinPrecision(value);
+    if (precision && m_factor > 1)
+    {
+        precision -= static_cast<int>(log10(static_cast<double>(m_factor)));
+        if (precision < 0)
+            precision = 0;
+    }
+
+    return wxNumberFormatter::ToString(value * m_factor,
+        precision,
+        GetFormatFlags());
+}
+
+bool
+wxFlexFloatingPointValidatorBase::FromString(const wxString& s,
+    LongestValueType* value) const
+{
+    if (!wxNumberFormatter::FromString(s, value))
+        return false;
+
+    *value /= m_factor;
+
+    return true;
+}
+
+bool
+wxFlexFloatingPointValidatorBase::IsCharOk(const wxString& val,
+    int pos,
+    wxChar ch) const
+{
+    const wxChar separator = wxNumberFormatter::GetDecimalSeparator();
+    if (ch == separator)
+    {
+        if (val.find(separator) != wxString::npos)
+        {
+            // There is already a decimal separator, can't insert another one.
+            return false;
+        }
+
+        // Prepending a separator before the minus sign isn't allowed.
+        if (pos == 0 && !val.empty() && val[0] == '-')
+            return false;
+
+        // Otherwise always accept it, adding a decimal separator doesn't
+        // change the number value and, in particular, can't make it invalid.
+        // OTOH the checks below might not pass because strings like "." or
+        // "-." are not valid numbers so parsing them would fail, hence we need
+        // to treat it specially here.
+        return true;
+    }
+
+    // Must be a digit then.
+    if (ch < '0' || ch > '9')
+        return false;
+
+    // Check whether the value we'd obtain if we accepted this key passes some
+    // basic checks.
+    const wxString newval(GetValueAfterInsertingChar(val, pos, ch));
+
+    LongestValueType value;
+    if (!FromString(newval, &value))
+        return false;
+
+    // Note that we do _not_ check if it's in range here, see the comment in
+    // wxIntegerValidatorBase::IsCharOk().
+    return true;
+}
+
 FST_GUI::FST_GUI() : blockQueue(this)
 {
     loadSave();
