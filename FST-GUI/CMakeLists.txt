@@ -45,6 +45,8 @@ target_link_libraries(FST-GUI PRIVATE
         SYCLQuery
 )
 
+target_link_libraries(FST-GUI PRIVATE "-Wl,--disable-new-dtags")
+
 set_target_properties(FST-GUI PROPERTIES
   CXX_STANDARD 20
   CXX_STANDARD_REQUIRED yes
