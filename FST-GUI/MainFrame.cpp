@@ -1,4 +1,4 @@
-﻿#include "MainFrame.hpp"
+#include "MainFrame.hpp"
 #include "GPUFrame.hpp"
 #include "Logging.hpp"
 #include "Validator.hpp"
@@ -97,8 +97,7 @@ void MainFrame::SetupArgs(BlockData* blockParams, std::vector<std::string>& args
             if (fst_gui->readCheckpoint(&checkpointBlock, entry.path())) {
                 if (compareBlocks(&checkpointBlock, blockParams)) {
                     std::filesystem::file_time_type lastModified = entry.last_write_time();
-                    std::chrono::system_clock::time_point lastModifiedSystem = std::chrono::clock_cast<std::chrono::system_clock>(lastModified);
-                    std::time_t lastModifiedTime = std::chrono::system_clock::to_time_t(lastModifiedSystem);
+                    std::time_t lastModifiedTime = std::chrono::system_clock::to_time_t(lastModified - std::filesystem::file_time_type::clock::now() + std::chrono::system_clock::now());
                     std::tm lastModifiedTM = *std::localtime(&lastModifiedTime);
 
                     std::stringstream ss;
