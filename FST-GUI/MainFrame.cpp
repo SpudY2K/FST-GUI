@@ -22,6 +22,11 @@ void MainFrame::OnClose(wxCloseEvent& event)
 {
     if (runThread) {
         runThread->terminate_subprocess();
+
+        if (fst_gui->blockQueue.queueLength() == 1 && removeBlockOnCancel) {
+            fst_gui->blockQueue.removeBlockFromQueue(0);
+            fst_gui->saveSave();
+        }
     }
     
     Destroy();
