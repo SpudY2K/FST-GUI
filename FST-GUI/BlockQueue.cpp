@@ -91,8 +91,10 @@ void BlockQueue::getQueueStrings(wxArrayString& queueStrings, bool running) {
     }
 }
 
-bool BlockQueue::moveElement(int source, int target) {
-    if (source >= 0 && source < this->queue.size() && target >= 0 && target < this->queue.size() && source != target) {
+bool BlockQueue::moveElement(int source, int target, bool running) {
+    int minIdx = running ? 1 : 0;
+
+    if (source >= minIdx && source < this->queue.size() && target >= minIdx && target < this->queue.size() && source != target) {
         std::list<BlockData>::iterator iter = this->queue.begin();
         std::list<BlockData>::iterator sIter;
         std::list<BlockData>::iterator tIter;

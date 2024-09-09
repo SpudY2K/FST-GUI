@@ -97,7 +97,7 @@ public:
     BlockData getNextBlockInQueue();
     void getQueueStrings(wxArrayString& queueStrings, bool running);
     void clearQueue(bool removeFirst);
-    bool moveElement(int source, int target);
+    bool moveElement(int source, int target, bool running);
 
 private:
     std::list<BlockData> queue;

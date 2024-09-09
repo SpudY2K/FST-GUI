@@ -1,4 +1,4 @@
-#include "MainFrame.hpp"
+﻿#include "MainFrame.hpp"
 #include "GPUFrame.hpp"
 #include "Logging.hpp"
 #include "Validator.hpp"
@@ -300,14 +300,14 @@ void MainFrame::OnClickQueue(wxCommandEvent& event) {
 }
 
 void MainFrame::MoveQueue(int source, int target) {
-    if (fst_gui->blockQueue.moveElement(source, target)) {
+    if (fst_gui->blockQueue.moveElement(source, target, runThread != nullptr)) {
         UpdateQueueList(target);
         fst_gui->saveSave();
     }
 }
 
 void MainFrame::OnClickQueueTop(wxCommandEvent& event) {
-    MoveQueue(queueList->GetSelection(), 0);
+    MoveQueue(queueList->GetSelection(), (runThread != nullptr) ? 1 : 0);
 }
 
 void MainFrame::OnClickQueueUp(wxCommandEvent& event) {
