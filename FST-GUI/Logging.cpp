@@ -123,6 +123,12 @@ bool ReadTriplet(std::string& line, float* triplet) {
 
     tripletStr = tripletStr.substr(commaIdx + 1);
 
+    commaIdx = tripletStr.find(",");
+
+    if (commaIdx == -1) {
+        commaIdx = tripletStr.length();
+    }
+
     try {
         triplet[2] = std::stof(tripletStr.substr(0, commaIdx));
     }
