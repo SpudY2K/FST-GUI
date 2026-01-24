@@ -109,7 +109,7 @@ bool compareBlocks(BlockData* s1, BlockData* s2);
 class FST_GUI : public wxApp
 {
 public:
-    std::string version = "v1.5";
+    std::string version = "v1.6";
     SaveData saveStruct;
     BlockQueue blockQueue;
 
@@ -144,3 +144,4 @@ private:
 };
 
 bool findExecutableFile(std::filesystem::path& executablePath);
+
